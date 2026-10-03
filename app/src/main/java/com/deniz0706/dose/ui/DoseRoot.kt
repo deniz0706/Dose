@@ -41,6 +41,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
+import com.deniz0706.dose.R
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -171,9 +175,8 @@ private fun DoseSplash(onFinished:()->Unit) {
     }
     Surface(Modifier.fillMaxSize(),color=Paper) {
         Column(Modifier.fillMaxSize().alpha(alpha.value),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) {
-            Box(Modifier.size(112.dp).scale(scale.value).shadow(10.dp,RoundedCornerShape(30.dp)).background(Cobalt,RoundedCornerShape(30.dp)),contentAlignment=Alignment.Center) {
-                Text("◷",color=TopLight,fontSize=64.sp,fontWeight=FontWeight.Light)
-                Text("●",color=TopLight,fontSize=28.sp,modifier=Modifier.offset(x=14.dp,y=(-4).dp))
+            Box(Modifier.size(112.dp).scale(scale.value).shadow(10.dp,RoundedCornerShape(30.dp)).clip(RoundedCornerShape(30.dp)).background(Cobalt),contentAlignment=Alignment.Center) {
+                Image(painter=painterResource(R.drawable.ic_dose_foreground),contentDescription="Dose logosu",modifier=Modifier.fillMaxSize().background(Color(0xFF527CE9)).padding(4.dp))
             }
             Spacer(Modifier.height(24.dp))
             Text("Dose",fontSize=38.sp,fontWeight=FontWeight.SemiBold,color=Ink)
