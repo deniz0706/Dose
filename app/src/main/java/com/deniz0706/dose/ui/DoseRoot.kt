@@ -367,9 +367,25 @@ private fun AddMedicationSheet(
                         .background(Color(0xFFD8D6D0), CircleShape)
                         .align(Alignment.CenterHorizontally)
                 )
-                Spacer(Modifier.height(22.dp))
-                Text(if (initial == null) "Yeni ilaç" else "İlacı düzenle", fontSize = 27.sp, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(22.dp))
+                Spacer(Modifier.height(18.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (initial == null) "Yeni ilaç" else "İlacı düzenle",
+                        fontSize = 27.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        "Kapat",
+                        color = Cobalt,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .clickable(onClick = onDismiss)
+                    )
+                }
+                Spacer(Modifier.height(18.dp))
 
                 OutlinedTextField(
                     value = name,
