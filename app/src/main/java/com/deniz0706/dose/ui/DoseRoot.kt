@@ -242,6 +242,21 @@ private fun HomeScreen(
             }
         }
 
+        Spacer(Modifier.height(28.dp))
+        Text("YAKLAŞAN", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp, color = Muted)
+        Spacer(Modifier.height(10.dp))
+        val upcoming = occurrences.sortedBy { it.third.toInstant().toEpochMilli() }.take(5)
+        if (upcoming.isNotEmpty()) StoneSurface {
+            Column {
+                upcoming.forEachIndexed { index, entry ->
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("%02d:%02d".format(entry.second.hour, entry.second.minute), color = Cobalt, fontWeight = FontWeight.Medium, modifier = Modifier.width(70.dp))
+                        Column(Modifier.weight(1f)) { Text(entry.first.name, fontWeight = FontWeight.Medium); Text(relativeTime(entry.third), color = Muted, fontSize = 11.sp) }
+                    }
+                    if (index != upcoming.lastIndex) HorizontalDivider(color = Hairline, modifier = Modifier.padding(start = 90.dp))
+                }
+            }
+        }
         Spacer(Modifier.height(36.dp))
         Column(
             modifier = Modifier.align(Alignment.CenterHorizontally),
