@@ -19,4 +19,7 @@ class MedicationViewModel(application: Application) : AndroidViewModel(applicati
     fun toggle(reminder:MedicationReminder)=save(reminder.copy(enabled=!reminder.enabled))
     fun delete(reminder:MedicationReminder)=viewModelScope.launch{ReminderScheduler.cancel(getApplication(),reminder);repository.delete(reminder.id)}
     fun markTaken(reminder:MedicationReminder,timeId:Long)=viewModelScope.launch{DoseActions.taken(getApplication(),reminder,timeId)}
+    fun undoTaken(reminder:MedicationReminder,timeId:Long)=viewModelScope.launch{
+        repository.undoTaken(reminder, DoseActions.eventKey(reminder.id,timeId))
+    }
 }
