@@ -234,6 +234,18 @@ private fun HomeScreen(
             }
         }
 
+        Spacer(Modifier.height(28.dp))
+        Text("GÜNÜN AKIŞI",fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.7.sp,color=Muted)
+        Spacer(Modifier.height(10.dp))
+        if(sorted.isNotEmpty()) StoneSurface { Row(Modifier.fillMaxWidth().padding(horizontal=18.dp,vertical=18.dp),horizontalArrangement=Arrangement.SpaceBetween) {
+            sorted.take(5).forEach { (r,t) ->
+                val status=todayEvents.firstOrNull { it.reminderId==r.id && it.timeId==t.id }?.status
+                Column(horizontalAlignment=Alignment.CenterHorizontally) {
+                    Text(if(status==DoseStatus.TAKEN) "✓" else if(status==DoseStatus.MISSED) "!" else "○",color=if(status==DoseStatus.MISSED) Color(0xFF9C6A2E) else Cobalt,fontSize=18.sp,fontWeight=FontWeight.Bold)
+                    Text("%02d:%02d".format(t.hour,t.minute),fontSize=11.sp,color=Muted)
+                }
+            }
+        }}
         Spacer(Modifier.height(34.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("BUGÜN", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp, color = Muted, modifier = Modifier.weight(1f))
