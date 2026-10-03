@@ -190,12 +190,9 @@ private fun HomeScreen(
     val takenCount = todayEvents.count { it.status == DoseStatus.TAKEN && it.key in activeTodayKeys }
     val totalToday = activeTodayKeys.size
 
+    val homeScroll = rememberScrollState()
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .padding(horizontal = if(isWide) 64.dp else 28.dp)
-            .verticalScroll(rememberScrollState())
+        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = if(isWide) 48.dp else 28.dp).verticalScroll(homeScroll)
     ) {
         Spacer(Modifier.height(28.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -226,6 +223,8 @@ private fun HomeScreen(
         Spacer(Modifier.height(18.dp))
         OutlinedTextField(value=search,onValueChange={search=it},modifier=Modifier.fillMaxWidth(),singleLine=true,label={Text("İlaç ara")},shape=RoundedCornerShape(18.dp))
         Spacer(Modifier.height(24.dp))
+        if (isWide) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1.08f)) {
 
         Text("SIRADAKİ", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp, color = Cobalt)
         Spacer(Modifier.height(10.dp))
@@ -319,6 +318,8 @@ private fun HomeScreen(
             }
         }
 
+            }
+            Column(Modifier.weight(.92f)) {
         val lowStock = reminders.filter { it.stock != null && it.stock <= it.lowStockThreshold }
         if (lowStock.isNotEmpty()) {
             Spacer(Modifier.height(24.dp))
@@ -376,6 +377,10 @@ private fun HomeScreen(
             }
             if(tomorrowItems.size>6) Text("+${tomorrowItems.size-6} doz daha",color=Muted,fontSize=11.sp,modifier=Modifier.padding(20.dp))
         }}
+            }
+        } else {
+            Spacer(Modifier.height(0.dp))
+        }
         Spacer(Modifier.height(36.dp))
         Column(
             modifier = Modifier.align(Alignment.CenterHorizontally),
