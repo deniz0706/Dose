@@ -184,8 +184,9 @@ private fun HomeScreen(
             ) else null
         }
     }
-    val takenCount = todayEvents.count { it.status == DoseStatus.TAKEN }
-    val totalToday = sorted.count { it.first.enabled }
+    val activeTodayKeys = sorted.filter { it.first.enabled }.map { (r,t) -> "${r.id}:${t.id}:$today" }.toSet()
+    val takenCount = todayEvents.count { it.status == DoseStatus.TAKEN && it.key in activeTodayKeys }
+    val totalToday = activeTodayKeys.size
 
     Column(
         modifier = Modifier
