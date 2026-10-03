@@ -1,6 +1,13 @@
 package com.deniz0706.dose.ui
 
 import android.app.TimePickerDialog
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -590,7 +597,7 @@ private fun HistoryScreen(events: List<DoseEvent>, reminders: List<MedicationRem
                         Text(names[event.reminderId] ?: "İlaç", fontWeight = FontWeight.Medium)
                         Text("${event.scheduledDate} · %02d:%02d".format(event.scheduledHour,event.scheduledMinute), color = Muted, fontSize = 12.sp)
                     }
-                    Text(if(event.status==DoseStatus.TAKEN) "ALINDI" else "ERTELENDİ", color=Cobalt, fontSize=11.sp, fontWeight=FontWeight.Bold)
+                    Text(when(event.status){ DoseStatus.TAKEN -> "ALINDI"; DoseStatus.SNOOZED -> "ERTELENDİ"; DoseStatus.MISSED -> "KAÇIRILDI" }, color=if(event.status==DoseStatus.MISSED) Color(0xFF9C6A2E) else Cobalt, fontSize=11.sp, fontWeight=FontWeight.Bold)
                 }
                 if(index != visible.lastIndex) HorizontalDivider(color=Hairline)
             }
@@ -603,7 +610,10 @@ private fun HistoryScreen(events: List<DoseEvent>, reminders: List<MedicationRem
 private fun SettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val alarmManager = remember { context.getSystemService(android.app.AlarmManager::class.java) }
-    val exact = android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+    val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+    val notifications = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    val notificationManager = remember { context.getSystemService(android.app.NotificationManager::class.java) }
+    val fullScreen = Build.VERSION.SDK_INT < 34 || notificationManager.canUseFullScreenIntent()
     Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal=28.dp).verticalScroll(rememberScrollState())) {
         Spacer(Modifier.height(28.dp))
         Row(verticalAlignment=Alignment.CenterVertically) {
@@ -614,7 +624,23 @@ private fun SettingsScreen(onBack: () -> Unit) {
         Text("HATIRLATMA GÜVENİLİRLİĞİ",fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,color=Muted)
         Spacer(Modifier.height(10.dp))
         StoneSurface { Column(Modifier.padding(20.dp)) {
+            ReliabilityRow("Bildirimler", notifications)
+            Spacer(Modifier.height(10.dp))
             ReliabilityRow("Tam zamanlı alarm", exact)
+            Spacer(Modifier.height(10.dp))
+            ReliabilityRow("Tam ekran alarm", fullScreen)
+            if (!exact && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                Spacer(Modifier.height(12.dp))
+                Text("Tam alarm iznini aç", color=Cobalt, fontSize=12.sp, modifier=Modifier.clickable {
+                    runCatching { context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}"))) }
+                })
+            }
+            if (!fullScreen && Build.VERSION.SDK_INT >= 34) {
+                Spacer(Modifier.height(10.dp))
+                Text("Tam ekran iznini aç", color=Cobalt, fontSize=12.sp, modifier=Modifier.clickable {
+                    runCatching { context.startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:${context.packageName}"))) }
+                })
+            }
             Spacer(Modifier.height(12.dp))
             Text("Bazı Android cihazlarında pil tasarrufu hatırlatmaları geciktirebilir. Dose mevcut izinları kullanır ancak teslimatı garanti edemez.",fontSize=12.sp,color=Muted)
         }}
