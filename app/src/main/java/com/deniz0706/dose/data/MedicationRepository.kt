@@ -13,6 +13,9 @@ import kotlinx.serialization.json.Json
 
 private val Context.dataStore by preferencesDataStore("dose_data")
 
+@kotlinx.serialization.Serializable
+data class DoseBackup(val version:Int=1,val reminders:List<MedicationReminder>,val events:List<DoseEvent>)
+
 class MedicationRepository(private val context: Context) {
     private val medicationsKey = stringPreferencesKey("medications")
     private val eventsKey = stringPreferencesKey("dose_events")
@@ -20,6 +23,8 @@ class MedicationRepository(private val context: Context) {
     val reminders: Flow<List<MedicationReminder>> = context.dataStore.data.map { decodeReminders(it[medicationsKey]) }
     val events: Flow<List<DoseEvent>> = context.dataStore.data.map { prefs -> decodeEvents(prefs[eventsKey]) }
     suspend fun current(): List<MedicationReminder> = reminders.first()
+    suspend fun exportBackup(): String = json.encodeToString(DoseBackup(1, reminders.first(), events.first()))
+    suspend fun importBackup(raw:String) { val backup=json.decodeFromString<DoseBackup>(raw); context.dataStore.edit { it[medicationsKey]=json.encodeToString(backup.reminders); it[eventsKey]=json.encodeToString(backup.events.takeLast(1500)) } }
 
     suspend fun save(reminder: MedicationReminder) = context.dataStore.edit { prefs ->
         val current = decodeReminders(prefs[medicationsKey])
