@@ -2,8 +2,11 @@ package com.deniz0706.dose.ui
 
 import android.app.TimePickerDialog
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -59,7 +62,31 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
                     onToggle = vm::toggle,
                     onDelete = vm::delete
                 )
-                if (adding) {
+                AnimatedVisibility(
+                    visible = adding,
+                    enter = fadeIn(animationSpec = tween(220)),
+                    exit = fadeOut(animationSpec = tween(180))
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = .18f))
+                            .clickable { adding = false }
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = adding,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    enter = slideInVertically(
+                        initialOffsetY = { it },
+                        animationSpec = tween(340)
+                    ) + fadeIn(animationSpec = tween(240)),
+                    exit = slideOutVertically(
+                        targetOffsetY = { it },
+                        animationSpec = tween(260)
+                    ) + fadeOut(animationSpec = tween(180))
+                ) {
                     AddMedicationSheet(
                         onDismiss = { adding = false },
                         onSave = {
@@ -258,20 +285,13 @@ private fun AddMedicationSheet(
     var days by remember { mutableStateOf((1..7).toSet()) }
     val context = LocalContext.current
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = .18f))
-            .clickable(onClick = onDismiss),
-        contentAlignment = Alignment.BottomCenter
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = false) {},
+        shape = RoundedCornerShape(topStart = 34.dp, topEnd = 34.dp),
+        color = TopLight
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(enabled = false) {},
-            shape = RoundedCornerShape(topStart = 34.dp, topEnd = 34.dp),
-            color = TopLight
-        ) {
             Column(
                 Modifier
                     .navigationBarsPadding()
@@ -379,7 +399,6 @@ private fun AddMedicationSheet(
                 }
             }
         }
-    }
 }
 
 private fun relativeTime(target: ZonedDateTime): String {
