@@ -43,7 +43,7 @@ class MedicationRepository(private val context: Context) {
                     if (scheduled.isBefore(now)) {
                         val key = "${reminder.id}:${time.id}:$date"
                         if (currentEvents.none { it.key == key }) currentEvents += DoseEvent(
-                            key, reminder.id, time.id, date.toString(), time.hour, time.minute, DoseStatus.MISSED
+                            key, reminder.id, time.id, date.toString(), time.hour, time.minute, DoseStatus.MISSED, reminder.name
                         )
                     }
                 }
