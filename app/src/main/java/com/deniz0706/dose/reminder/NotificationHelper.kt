@@ -19,6 +19,10 @@ object NotificationHelper {
     }
 
     fun show(context: Context, reminder: MedicationReminder, timeId: Long, scheduledDate: String? = null) {
+        context.getSystemService(NotificationManager::class.java).notify(notificationId(reminder,timeId), build(context,reminder,timeId,scheduledDate))
+    }
+
+    fun build(context: Context, reminder: MedicationReminder, timeId: Long, scheduledDate: String? = null): Notification {
         createNotificationChannel(context)
         val id = notificationId(reminder, timeId)
         val encoded = ReminderScheduler.encode(reminder)
@@ -45,7 +49,7 @@ object NotificationHelper {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setOngoing(true).setAutoCancel(false)
             .setContentIntent(full).setFullScreenIntent(full, true)
             .addAction(0, "Aldım", taken).addAction(0, "${reminder.snoozeMinutes} dk sonra", snooze).build()
-        context.getSystemService(NotificationManager::class.java).notify(id, notification)
+        return notification
     }
 
     fun cancel(context: Context, reminder: MedicationReminder, timeId: Long? = null) {
@@ -54,5 +58,5 @@ object NotificationHelper {
         else reminder.effectiveTimes().forEach { manager.cancel(notificationId(reminder, it.id)) }
     }
 
-    private fun notificationId(reminder: MedicationReminder, timeId: Long) = 31 * reminder.id.hashCode() + timeId.hashCode()
+    fun notificationId(reminder: MedicationReminder, timeId: Long) = 31 * reminder.id.hashCode() + timeId.hashCode()
 }
