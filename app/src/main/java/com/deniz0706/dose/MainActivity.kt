@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { DoseRoot() }
+        setContent { DoseRoot(startAdding = intent?.action == "com.deniz0706.dose.ADD_MEDICATION") }
         requestNotificationPermission()
     }
 
