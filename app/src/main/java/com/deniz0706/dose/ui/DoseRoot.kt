@@ -473,9 +473,6 @@ private fun AddMedicationSheet(
     var times by remember(initial) { mutableStateOf(initial?.effectiveTimes() ?: listOf(MedicationTime(hour = initial?.hour ?: 9, minute = initial?.minute ?: 0))) }
     var days by remember(initial) { mutableStateOf(initial?.repeatDays ?: (1..7).toSet()) }
     val context = LocalContext.current
-    val scope=rememberCoroutineScope()
-    val exportLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")){uri->if(uri!=null)scope.launch{runCatching{context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use{it.write(vm.exportBackup())}}}}
-    val importLauncher=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null)scope.launch{runCatching{context.contentResolver.openInputStream(uri)?.bufferedReader()?.use{vm.importBackup(it.readText())}}}}
 
     Surface(
         modifier = Modifier
@@ -750,6 +747,13 @@ private fun ArchiveScreen(reminders:List<MedicationReminder>,onRestore:(Medicati
 @Composable
 private fun SettingsScreen(vm:MedicationViewModel,onArchive: () -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) scope.launch { runCatching { context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(vm.exportBackup()) } } }
+    }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) scope.launch { runCatching { context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { vm.importBackup(it.readText()) } } }
+    }
     val alarmManager = remember { context.getSystemService(android.app.AlarmManager::class.java) }
     val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
     val notifications = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
