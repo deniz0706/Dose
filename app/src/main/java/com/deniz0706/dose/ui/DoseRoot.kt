@@ -589,6 +589,22 @@ private fun HistoryScreen(events: List<DoseEvent>, reminders: List<MedicationRem
             listOf(7,30).forEach { d -> FilterChip(selected = days == d, onClick = { days = d }, label = { Text("$d gün") }) }
         }
         Spacer(Modifier.height(18.dp))
+        if (visible.isNotEmpty()) {
+            val grouped = visible.groupBy { it.scheduledDate }
+            StoneSurface { Column(Modifier.padding(18.dp)) {
+                Text("Özet", fontWeight=FontWeight.SemiBold, fontSize=16.sp)
+                Spacer(Modifier.height(10.dp))
+                grouped.entries.take(7).forEach { (date, dayEvents) ->
+                    val taken = dayEvents.count { it.status == DoseStatus.TAKEN }
+                    val missed = dayEvents.count { it.status == DoseStatus.MISSED }
+                    Row(Modifier.fillMaxWidth().padding(vertical=5.dp)) {
+                        Text(date, color=Muted, fontSize=12.sp, modifier=Modifier.weight(1f))
+                        Text("$taken alındı" + if(missed>0) " · $missed kaçırıldı" else "", color=if(missed>0) Color(0xFF9C6A2E) else Cobalt, fontSize=12.sp)
+                    }
+                }
+            }}
+            Spacer(Modifier.height(14.dp))
+        }
         if (visible.isEmpty()) Text("Henüz kayıt yok. Aldım veya Ertele işlemleri burada görünecek.", color = Muted)
         else StoneSurface { Column {
             visible.forEachIndexed { index, event ->
