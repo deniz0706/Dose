@@ -202,7 +202,7 @@ private fun HomeScreen(
 
         Spacer(Modifier.height(36.dp))
         Text(
-            "Dose · v0.1",
+            "Dose · v0.1 — Developed by Deniz",
             modifier = Modifier.align(Alignment.CenterHorizontally),
             color = Muted.copy(alpha = .65f),
             fontSize = 11.sp
