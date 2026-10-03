@@ -20,6 +20,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -140,6 +141,7 @@ private fun HomeScreen(
     onSettings: () -> Unit
 ) {
     var search by remember { mutableStateOf("") }
+    val isWide = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 700
     val today = LocalDate.now()
     val todayIso = today.dayOfWeek.value
     val filteredReminders = reminders.filter { search.isBlank() || it.name.contains(search, ignoreCase=true) }
@@ -167,7 +169,7 @@ private fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .padding(horizontal = 28.dp)
+            .padding(horizontal = if(isWide) 64.dp else 28.dp)
             .verticalScroll(rememberScrollState())
     ) {
         Spacer(Modifier.height(28.dp))
