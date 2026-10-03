@@ -3,11 +3,7 @@ package com.deniz0706.dose.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MedicationTime(
-    val id: Long = System.currentTimeMillis(),
-    val hour: Int,
-    val minute: Int
-)
+data class MedicationTime(val id: Long = System.nanoTime(), val hour: Int, val minute: Int)
 
 @Serializable
 data class MedicationReminder(
@@ -28,8 +24,7 @@ data class MedicationReminder(
         if (times.isNotEmpty()) times else listOf(MedicationTime(id = id, hour = hour, minute = minute))
 }
 
-@Serializable
-enum class DoseStatus { TAKEN, SNOOZED }
+@Serializable enum class DoseStatus { TAKEN, SNOOZED, MISSED }
 
 @Serializable
 data class DoseEvent(
