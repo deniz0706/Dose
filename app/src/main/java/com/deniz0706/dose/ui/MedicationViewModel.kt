@@ -18,6 +18,8 @@ class MedicationViewModel(application: Application) : AndroidViewModel(applicati
     init { viewModelScope.launch { repository.reconcileMissed() } }
     fun save(reminder:MedicationReminder)=viewModelScope.launch{repository.save(reminder);ReminderScheduler.schedule(getApplication(),reminder)}
     fun toggle(reminder:MedicationReminder)=save(reminder.copy(enabled=!reminder.enabled))
+    fun archive(reminder:MedicationReminder)=save(reminder.copy(archived=true,enabled=false))
+    fun restore(reminder:MedicationReminder)=save(reminder.copy(archived=false))
     fun delete(reminder:MedicationReminder)=viewModelScope.launch{ReminderScheduler.cancel(getApplication(),reminder);repository.delete(reminder.id)}
     fun markTaken(reminder:MedicationReminder,timeId:Long)=viewModelScope.launch{DoseActions.taken(getApplication(),reminder,timeId)}
     fun undoTaken(reminder:MedicationReminder,timeId:Long)=viewModelScope.launch{
