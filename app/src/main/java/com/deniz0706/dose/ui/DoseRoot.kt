@@ -48,6 +48,8 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
     val reminders by vm.reminders.collectAsState()
     val events by vm.events.collectAsState()
     var adding by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<MedicationReminder?>(null) }
+    var section by remember { mutableStateOf("today") }
 
     MaterialTheme(
         colorScheme = lightColorScheme(
@@ -60,15 +62,18 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
     ) {
         Surface(modifier = Modifier.fillMaxSize(), color = Paper) {
             Box {
-                HomeScreen(
-                    reminders = reminders,
-                    events = events,
-                    onAdd = { adding = true },
-                    onToggle = vm::toggle,
-                    onDelete = vm::delete
-                )
+                when (section) {
+                    "history" -> HistoryScreen(events, reminders, onBack = { section = "today" })
+                    "settings" -> SettingsScreen(onBack = { section = "today" })
+                    else -> HomeScreen(
+                        reminders = reminders, events = events,
+                        onAdd = { adding = true }, onToggle = vm::toggle, onDelete = vm::delete,
+                        onEdit = { editing = it }, onTaken = vm::markTaken,
+                        onHistory = { section = "history" }, onSettings = { section = "settings" }
+                    )
+                }
                 AnimatedVisibility(
-                    visible = adding,
+                    visible = adding || editing != null,
                     enter = fadeIn(animationSpec = tween(220)),
                     exit = fadeOut(animationSpec = tween(180))
                 ) {
@@ -76,12 +81,12 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
                         Modifier
                             .fillMaxSize()
                             .background(Color.Black.copy(alpha = .18f))
-                            .clickable { adding = false }
+                            .clickable { adding = false; editing = null }
                     )
                 }
 
                 AnimatedVisibility(
-                    visible = adding,
+                    visible = adding || editing != null,
                     modifier = Modifier.align(Alignment.BottomCenter),
                     enter = slideInVertically(
                         initialOffsetY = { it },
@@ -93,10 +98,11 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
                     ) + fadeOut(animationSpec = tween(180))
                 ) {
                     AddMedicationSheet(
-                        onDismiss = { adding = false },
+                        initial = editing,
+                        onDismiss = { adding = false; editing = null },
                         onSave = {
                             vm.save(it)
-                            adding = false
+                            adding = false; editing = null
                         }
                     )
                 }
@@ -111,7 +117,11 @@ private fun HomeScreen(
     events: List<DoseEvent>,
     onAdd: () -> Unit,
     onToggle: (MedicationReminder) -> Unit,
-    onDelete: (MedicationReminder) -> Unit
+    onDelete: (MedicationReminder) -> Unit,
+    onEdit: (MedicationReminder) -> Unit,
+    onTaken: (MedicationReminder, Long) -> Unit,
+    onHistory: () -> Unit,
+    onSettings: () -> Unit
 ) {
     val today = LocalDate.now()
     val todayIso = today.dayOfWeek.value
@@ -142,6 +152,8 @@ private fun HomeScreen(
                     color = Muted
                 )
             }
+            Text("Geçmiş", color = Cobalt, fontSize = 12.sp, modifier = Modifier.padding(end = 14.dp).clickable(onClick = onHistory))
+            Text("Ayarlar", color = Cobalt, fontSize = 12.sp, modifier = Modifier.padding(end = 14.dp).clickable(onClick = onSettings))
             Box(
                 modifier = Modifier
                     .size(52.dp)
@@ -214,7 +226,7 @@ private fun HomeScreen(
                         val item = pair.first
                         val time = pair.second
                         val taken = todayEvents.any { it.reminderId == item.id && it.timeId == time.id && it.status == DoseStatus.TAKEN }
-                        MedicationRow(item, time, taken, onToggle, onDelete)
+                        MedicationRow(item, time, taken, onToggle, onDelete, onEdit, onTaken)
                         if (index != sorted.lastIndex) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(start = 92.dp),
@@ -271,7 +283,9 @@ private fun MedicationRow(
     time: MedicationTime,
     taken: Boolean,
     onToggle: (MedicationReminder) -> Unit,
-    onDelete: (MedicationReminder) -> Unit
+    onDelete: (MedicationReminder) -> Unit,
+    onEdit: (MedicationReminder) -> Unit,
+    onTaken: (MedicationReminder, Long) -> Unit
 ) {
     var showDelete by remember { mutableStateOf(false) }
     Row(
@@ -297,14 +311,11 @@ private fun MedicationRow(
                 if (stock <= item.lowStockThreshold) Text("Stok: $stock · azalıyor", fontSize = 10.sp, color = Color(0xFF9C6A2E))
             }
             AnimatedVisibility(showDelete, enter = fadeIn() + slideInVertically()) {
-                Text(
-                    "Sil",
-                    color = Color(0xFF9C3E3E),
-                    fontSize = 12.sp,
-                    modifier = Modifier
-                        .padding(top = 7.dp)
-                        .clickable { onDelete(item) }
-                )
+                Row(Modifier.padding(top = 7.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    Text("Düzenle", color = Cobalt, fontSize = 12.sp, modifier = Modifier.clickable { onEdit(item) })
+                    if (!taken) Text("Aldım", color = Cobalt, fontSize = 12.sp, modifier = Modifier.clickable { onTaken(item, time.id) })
+                    Text("Sil", color = Color(0xFF9C3E3E), fontSize = 12.sp, modifier = Modifier.clickable { onDelete(item) })
+                }
             }
         }
         Switch(
@@ -323,17 +334,17 @@ private fun MedicationRow(
 
 @Composable
 private fun AddMedicationSheet(
+    initial: MedicationReminder? = null,
     onDismiss: () -> Unit,
     onSave: (MedicationReminder) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var dose by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-    var stockText by remember { mutableStateOf("") }
-    var snoozeMinutes by remember { mutableIntStateOf(10) }
-    var hour by remember { mutableIntStateOf(9) }
-    var minute by remember { mutableIntStateOf(0) }
-    var days by remember { mutableStateOf((1..7).toSet()) }
+    var name by remember(initial) { mutableStateOf(initial?.name.orEmpty()) }
+    var dose by remember(initial) { mutableStateOf(initial?.dose.orEmpty()) }
+    var note by remember(initial) { mutableStateOf(initial?.note.orEmpty()) }
+    var stockText by remember(initial) { mutableStateOf(initial?.stock?.toString().orEmpty()) }
+    var snoozeMinutes by remember(initial) { mutableIntStateOf(initial?.snoozeMinutes ?: 10) }
+    var times by remember(initial) { mutableStateOf(initial?.effectiveTimes() ?: listOf(MedicationTime(hour = initial?.hour ?: 9, minute = initial?.minute ?: 0))) }
+    var days by remember(initial) { mutableStateOf(initial?.repeatDays ?: (1..7).toSet()) }
     val context = LocalContext.current
 
     Surface(
@@ -357,7 +368,7 @@ private fun AddMedicationSheet(
                         .align(Alignment.CenterHorizontally)
                 )
                 Spacer(Modifier.height(22.dp))
-                Text("Yeni ilaç", fontSize = 27.sp, fontWeight = FontWeight.SemiBold)
+                Text(if (initial == null) "Yeni ilaç" else "İlacı düzenle", fontSize = 27.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(22.dp))
 
                 OutlinedTextField(
@@ -410,19 +421,25 @@ private fun AddMedicationSheet(
                 }
                 Spacer(Modifier.height(20.dp))
 
-                Text("Saat", fontSize = 12.sp, color = Muted)
-                Text(
-                    "%02d:%02d".format(hour, minute),
-                    fontSize = 42.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Cobalt,
-                    modifier = Modifier.clickable {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Saatler", fontSize = 12.sp, color = Muted, modifier = Modifier.weight(1f))
+                    Text("+ saat ekle", color = Cobalt, fontSize = 12.sp, modifier = Modifier.clickable {
                         TimePickerDialog(context, { _, h, m ->
-                            hour = h
-                            minute = m
-                        }, hour, minute, true).show()
+                            times = times + MedicationTime(hour = h, minute = m)
+                        }, 9, 0, true).show()
+                    })
+                }
+                times.forEach { time ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("%02d:%02d".format(time.hour, time.minute), fontSize = 34.sp, fontWeight = FontWeight.Medium, color = Cobalt,
+                            modifier = Modifier.weight(1f).clickable {
+                                TimePickerDialog(context, { _, h, m ->
+                                    times = times.map { if (it.id == time.id) it.copy(hour=h, minute=m) else it }
+                                }, time.hour, time.minute, true).show()
+                            })
+                        if (times.size > 1) Text("Sil", color = Color(0xFF9C3E3E), fontSize = 12.sp, modifier = Modifier.clickable { times = times.filterNot { it.id == time.id } })
                     }
-                )
+                }
 
                 Spacer(Modifier.height(20.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -461,13 +478,15 @@ private fun AddMedicationSheet(
                         if (name.isNotBlank()) {
                             onSave(
                                 MedicationReminder(
+                                    id = initial?.id ?: System.currentTimeMillis(),
                                     name = name.trim(),
                                     dose = dose.trim(),
                                     note = note.trim(),
                                     stock = stockText.toIntOrNull(),
                                     snoozeMinutes = snoozeMinutes,
-                                    hour = hour,
-                                    minute = minute,
+                                    hour = times.first().hour,
+                                    minute = times.first().minute,
+                                    times = times,
                                     repeatDays = days.ifEmpty { (1..7).toSet() }
                                 )
                             )
@@ -480,7 +499,7 @@ private fun AddMedicationSheet(
                     shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Cobalt)
                 ) {
-                    Text("Kaydet", fontWeight = FontWeight.SemiBold)
+                    Text(if (initial == null) "Kaydet" else "Değişiklikleri kaydet", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
