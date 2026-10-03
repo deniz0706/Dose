@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.deniz0706.dose.model.MedicationReminder
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 class ReminderAlertActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,10 +29,11 @@ class ReminderAlertActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val item = ReminderScheduler.decode(intent.getStringExtra(ReminderScheduler.EXTRA_REMINDER)) ?: run { finish(); return }
         val timeId = intent.getLongExtra(ReminderScheduler.EXTRA_TIME_ID, item.effectiveTimes().first().id)
+        val scheduledDate = intent.getStringExtra(ReminderScheduler.EXTRA_SCHEDULED_DATE)?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: LocalDate.now()
         setContent {
             ReminderAlert(item, timeId,
-                onTaken = { lifecycleScope.launch { DoseActions.taken(this@ReminderAlertActivity, item, timeId); finish() } },
-                onSnooze = { lifecycleScope.launch { DoseActions.snoozed(this@ReminderAlertActivity, item, timeId); finish() } }
+                onTaken = { lifecycleScope.launch { DoseActions.taken(this@ReminderAlertActivity, item, timeId, scheduledDate); finish() } },
+                onSnooze = { lifecycleScope.launch { DoseActions.snoozed(this@ReminderAlertActivity, item, timeId, scheduledDate); finish() } }
             )
         }
     }
