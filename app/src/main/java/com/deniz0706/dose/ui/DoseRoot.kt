@@ -86,7 +86,7 @@ fun DoseRoot(vm: MedicationViewModel = viewModel(), startAdding:Boolean=false, s
                     else -> HomeScreen(
                         reminders = reminders.filterNot { it.archived }, events = events,
                         onAdd = { adding = true }, onToggle = vm::toggle, onDelete = vm::delete,
-                        onEdit = { editing = it }, onTaken = vm::markTaken, onUndoTaken = vm::undoTaken,
+                        onEdit = { editing = it }, onArchive = vm::archive, onTaken = vm::markTaken, onUndoTaken = vm::undoTaken,
                         onHistory = { section = "history" }, onStats = { section = "stats" }, onSettings = { section = "settings" }
                     )
                 }
@@ -303,7 +303,7 @@ private fun HomeScreen(
                         val time = pair.second
                         val taken = todayEvents.any { it.reminderId == item.id && it.timeId == time.id && it.status == DoseStatus.TAKEN }
                         val missed = effectiveTodayEvents.any { it.reminderId == item.id && it.timeId == time.id && it.status == DoseStatus.MISSED }
-                        MedicationRow(item, time, taken, missed, onToggle, onDelete, onEdit, onTaken, onUndoTaken)
+                        MedicationRow(item, time, taken, missed, onToggle, onDelete, onArchive, onEdit, onTaken, onUndoTaken)
                         if (index != sorted.lastIndex) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(start = 92.dp),
@@ -419,6 +419,7 @@ private fun MedicationRow(
     missed: Boolean,
     onToggle: (MedicationReminder) -> Unit,
     onDelete: (MedicationReminder) -> Unit,
+    onArchive: (MedicationReminder) -> Unit,
     onEdit: (MedicationReminder) -> Unit,
     onTaken: (MedicationReminder, Long) -> Unit,
     onUndoTaken: (MedicationReminder, Long) -> Unit
@@ -461,6 +462,7 @@ private fun MedicationRow(
                 Row(Modifier.padding(top = 7.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                     Text("Düzenle", color = Cobalt, fontSize = 12.sp, modifier = Modifier.clickable { onEdit(item) })
                     if (!taken) Text("Aldım", color = Cobalt, fontSize = 12.sp, modifier = Modifier.clickable { onTaken(item, time.id) }) else Text("Geri al", color = Muted, fontSize = 12.sp, modifier = Modifier.clickable { onUndoTaken(item, time.id) })
+                    Text("Arşivle", color = Muted, fontSize = 12.sp, modifier = Modifier.clickable { onArchive(item) })
                     Text("Sil", color = Color(0xFF9C3E3E), fontSize = 12.sp, modifier = Modifier.clickable { confirmDelete = true })
                 }
             }
