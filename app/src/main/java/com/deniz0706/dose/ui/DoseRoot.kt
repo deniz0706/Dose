@@ -133,6 +133,16 @@ private fun HomeScreen(
     val nextTime = nextOccurrence?.second
     val sorted = todayReminders.flatMap { r -> r.effectiveTimes().map { t -> r to t } }.sortedWith(compareBy({ it.second.hour }, { it.second.minute }))
     val todayEvents = events.filter { it.scheduledDate == today.toString() }
+    val effectiveTodayEvents = sorted.mapNotNull { (reminder, time) ->
+        todayEvents.firstOrNull { it.reminderId == reminder.id && it.timeId == time.id } ?: run {
+            val scheduled = ZonedDateTime.now().withHour(time.hour).withMinute(time.minute).withSecond(0).withNano(0)
+            if (reminder.enabled && scheduled.isBefore(ZonedDateTime.now())) DoseEvent(
+                key = "${reminder.id}:${time.id}:$today",
+                reminderId = reminder.id, timeId = time.id, scheduledDate = today.toString(),
+                scheduledHour = time.hour, scheduledMinute = time.minute, status = DoseStatus.MISSED
+            ) else null
+        }
+    }
     val takenCount = todayEvents.count { it.status == DoseStatus.TAKEN }
     val totalToday = sorted.count { it.first.enabled }
 
@@ -229,7 +239,8 @@ private fun HomeScreen(
                         val item = pair.first
                         val time = pair.second
                         val taken = todayEvents.any { it.reminderId == item.id && it.timeId == time.id && it.status == DoseStatus.TAKEN }
-                        MedicationRow(item, time, taken, onToggle, onDelete, onEdit, onTaken, onUndoTaken)
+                        val missed = effectiveTodayEvents.any { it.reminderId == item.id && it.timeId == time.id && it.status == DoseStatus.MISSED }
+                        MedicationRow(item, time, taken, missed, onToggle, onDelete, onEdit, onTaken, onUndoTaken)
                         if (index != sorted.lastIndex) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(start = 92.dp),
@@ -300,6 +311,7 @@ private fun MedicationRow(
     item: MedicationReminder,
     time: MedicationTime,
     taken: Boolean,
+    missed: Boolean,
     onToggle: (MedicationReminder) -> Unit,
     onDelete: (MedicationReminder) -> Unit,
     onEdit: (MedicationReminder) -> Unit,
@@ -336,6 +348,7 @@ private fun MedicationRow(
             if (item.dose.isNotBlank()) Text(item.dose, fontSize = 12.sp, color = Muted)
             if (item.note.isNotBlank()) Text(item.note, fontSize = 11.sp, color = Muted)
             if (taken) Text("ALINDI", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Cobalt)
+            else if (missed) Text("KAÇIRILDI", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9C6A2E))
             item.stock?.let { stock ->
                 if (stock <= item.lowStockThreshold) Text("Stok: $stock · azalıyor", fontSize = 10.sp, color = Color(0xFF9C6A2E))
             }
