@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.deniz0706.dose.model.MedicationReminder
+import com.deniz0706.dose.model.MedicationTime
+import com.deniz0706.dose.model.DoseEvent
+import com.deniz0706.dose.model.DoseStatus
 import com.deniz0706.dose.reminder.ReminderScheduler
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -43,6 +46,7 @@ private val Hairline = Color(0xFFE4E2DC)
 @Composable
 fun DoseRoot(vm: MedicationViewModel = viewModel()) {
     val reminders by vm.reminders.collectAsState()
+    val events by vm.events.collectAsState()
     var adding by remember { mutableStateOf(false) }
 
     MaterialTheme(
@@ -58,6 +62,7 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
             Box {
                 HomeScreen(
                     reminders = reminders,
+                    events = events,
                     onAdd = { adding = true },
                     onToggle = vm::toggle,
                     onDelete = vm::delete
@@ -103,15 +108,22 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
 @Composable
 private fun HomeScreen(
     reminders: List<MedicationReminder>,
+    events: List<DoseEvent>,
     onAdd: () -> Unit,
     onToggle: (MedicationReminder) -> Unit,
     onDelete: (MedicationReminder) -> Unit
 ) {
-    val active = reminders.filter { it.enabled }
-    val next = active.minByOrNull {
-        ReminderScheduler.nextOccurrence(it).toInstant().toEpochMilli()
-    }
-    val sorted = reminders.sortedWith(compareBy({ it.hour }, { it.minute }))
+    val today = LocalDate.now()
+    val todayIso = today.dayOfWeek.value
+    val todayReminders = reminders.filter { it.repeatDays.isEmpty() || todayIso in it.repeatDays }
+    val occurrences = reminders.filter { it.enabled }.flatMap { r -> r.effectiveTimes().map { t -> Triple(r, t, ReminderScheduler.nextOccurrence(r, t)) } }
+    val nextOccurrence = occurrences.minByOrNull { it.third.toInstant().toEpochMilli() }
+    val next = nextOccurrence?.first
+    val nextTime = nextOccurrence?.second
+    val sorted = todayReminders.flatMap { r -> r.effectiveTimes().map { t -> r to t } }.sortedWith(compareBy({ it.second.hour }, { it.second.minute }))
+    val todayEvents = events.filter { it.scheduledDate == today.toString() }
+    val takenCount = todayEvents.count { it.status == DoseStatus.TAKEN }
+    val totalToday = sorted.count { it.first.enabled }
 
     Column(
         modifier = Modifier
@@ -155,13 +167,13 @@ private fun HomeScreen(
                     Text("İlk ilacını eklemek için + düğmesine dokun.", color = Muted, fontSize = 14.sp)
                 }
             } else {
-                val occurrence = ReminderScheduler.nextOccurrence(next)
+                val occurrence = nextOccurrence?.third ?: ReminderScheduler.nextOccurrence(next, nextTime ?: next.effectiveTimes().first())
                 Row(
                     Modifier.padding(horizontal = 24.dp, vertical = 22.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "%02d:%02d".format(next.hour, next.minute),
+                        "%02d:%02d".format(nextTime?.hour ?: next.hour, nextTime?.minute ?: next.minute),
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Medium,
                         color = Cobalt
@@ -178,7 +190,19 @@ private fun HomeScreen(
         }
 
         Spacer(Modifier.height(34.dp))
-        Text("BUGÜN", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp, color = Muted)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("BUGÜN", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp, color = Muted, modifier = Modifier.weight(1f))
+            Text("$takenCount / $totalToday tamamlandı", fontSize = 12.sp, color = Cobalt)
+        }
+        if (totalToday > 0) {
+            Spacer(Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = { (takenCount.toFloat() / totalToday).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(4.dp),
+                color = Cobalt,
+                trackColor = Hairline
+            )
+        }
         Spacer(Modifier.height(10.dp))
 
         if (sorted.isEmpty()) {
@@ -186,8 +210,11 @@ private fun HomeScreen(
         } else {
             StoneSurface {
                 Column {
-                    sorted.forEachIndexed { index, item ->
-                        MedicationRow(item, onToggle, onDelete)
+                    sorted.forEachIndexed { index, pair ->
+                        val item = pair.first
+                        val time = pair.second
+                        val taken = todayEvents.any { it.reminderId == item.id && it.timeId == time.id && it.status == DoseStatus.TAKEN }
+                        MedicationRow(item, time, taken, onToggle, onDelete)
                         if (index != sorted.lastIndex) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(start = 92.dp),
@@ -241,6 +268,8 @@ private fun StoneSurface(content: @Composable () -> Unit) {
 @Composable
 private fun MedicationRow(
     item: MedicationReminder,
+    time: MedicationTime,
+    taken: Boolean,
     onToggle: (MedicationReminder) -> Unit,
     onDelete: (MedicationReminder) -> Unit
 ) {
@@ -253,7 +282,7 @@ private fun MedicationRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            "%02d:%02d".format(item.hour, item.minute),
+            "%02d:%02d".format(time.hour, time.minute),
             modifier = Modifier.width(72.dp),
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
@@ -262,6 +291,11 @@ private fun MedicationRow(
         Column(Modifier.weight(1f)) {
             Text(item.name, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = if (item.enabled) Ink else Muted)
             if (item.dose.isNotBlank()) Text(item.dose, fontSize = 12.sp, color = Muted)
+            if (item.note.isNotBlank()) Text(item.note, fontSize = 11.sp, color = Muted)
+            if (taken) Text("ALINDI", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Cobalt)
+            item.stock?.let { stock ->
+                if (stock <= item.lowStockThreshold) Text("Stok: $stock · azalıyor", fontSize = 10.sp, color = Color(0xFF9C6A2E))
+            }
             AnimatedVisibility(showDelete, enter = fadeIn() + slideInVertically()) {
                 Text(
                     "Sil",
