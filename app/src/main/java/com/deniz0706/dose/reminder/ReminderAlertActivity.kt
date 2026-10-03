@@ -24,8 +24,12 @@ import java.time.LocalDate
 class ReminderAlertActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setShowWhenLocked(true); setTurnScreenOn(true)
-        getSystemService(KeyguardManager::class.java)?.requestDismissKeyguard(this, null)
+        if (android.os.Build.VERSION.SDK_INT >= 27) {
+            setShowWhenLocked(true); setTurnScreenOn(true)
+            getSystemService(KeyguardManager::class.java)?.requestDismissKeyguard(this, null)
+        } else {
+            window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+        }
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val item = ReminderScheduler.decode(intent.getStringExtra(ReminderScheduler.EXTRA_REMINDER)) ?: run { finish(); return }
         val timeId = intent.getLongExtra(ReminderScheduler.EXTRA_TIME_ID, item.effectiveTimes().first().id)
