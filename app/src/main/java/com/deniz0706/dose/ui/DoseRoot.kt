@@ -195,7 +195,13 @@ private fun HomeScreen(
 
         StoneSurface {
             if (totalToday > 0 && takenCount >= totalToday) {
-                Column(Modifier.padding(24.dp)) { Text("Bugün tamamlandı ✓", fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Cobalt); Spacer(Modifier.height(5.dp)); Text("Bugünkü planlanan dozların tamamı işaretlendi.", color = Muted, fontSize = 13.sp) }
+                Column(Modifier.padding(24.dp)) {
+                    Text("Bugün tamamlandı ✓", fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Cobalt)
+                    Spacer(Modifier.height(5.dp))
+                    Text("Bugünkü planlanan dozların tamamı işaretlendi.", color = Muted, fontSize = 13.sp)
+                    Spacer(Modifier.height(10.dp))
+                    LinearProgressIndicator(progress={1f}, modifier=Modifier.fillMaxWidth().height(3.dp), color=Cobalt, trackColor=Hairline)
+                }
             } else if (next == null) {
                 Column(Modifier.padding(24.dp)) {
                     Text("Henüz bir hatırlatıcı yok", fontSize = 20.sp, fontWeight = FontWeight.Medium)
@@ -283,7 +289,9 @@ private fun HomeScreen(
         Text("YAKLAŞAN", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp, color = Muted)
         Spacer(Modifier.height(10.dp))
         val upcoming = occurrences.sortedBy { it.third.toInstant().toEpochMilli() }.take(5)
-        if (upcoming.isNotEmpty()) StoneSurface {
+        if (upcoming.isEmpty()) {
+            Text("Yaklaşan etkin doz yok.", color=Muted, modifier=Modifier.padding(vertical=12.dp))
+        } else StoneSurface {
             Column {
                 upcoming.forEachIndexed { index, entry ->
                     Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
