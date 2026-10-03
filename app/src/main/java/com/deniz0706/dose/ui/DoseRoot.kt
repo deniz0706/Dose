@@ -737,7 +737,7 @@ private fun ArchiveScreen(reminders:List<MedicationReminder>,onRestore:(Medicati
         Spacer(Modifier.height(20.dp))
         if(archived.isEmpty()) Text("Arşivlenmiş ilaç yok.",color=Muted) else StoneSurface{Column{
             archived.forEachIndexed{index,item->Row(Modifier.fillMaxWidth().padding(18.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(item.name,fontWeight=FontWeight.Medium);Text(item.dose,color=Muted,fontSize=11.sp)};Text("Geri yükle",color=Cobalt,fontSize=12.sp,modifier=Modifier.clickable{onRestore(item)});Spacer(Modifier.width(14.dp));Text("Sil",color=Color(0xFF9C3E3E),fontSize=12.sp,modifier=Modifier.clickable{onDelete(item)})};if(index!=archived.lastIndex)HorizontalDivider(color=Hairline)}}
-        }}
+        }
     }
 }
 
