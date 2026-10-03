@@ -630,7 +630,7 @@ private fun HistoryScreen(events: List<DoseEvent>, reminders: List<MedicationRem
             visible.forEachIndexed { index, event ->
                 Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(names[event.reminderId] ?: "İlaç", fontWeight = FontWeight.Medium)
+                        Text(event.medicationName.ifBlank { names[event.reminderId] ?: "İlaç" }, fontWeight = FontWeight.Medium)
                         Text("${event.scheduledDate} · %02d:%02d".format(event.scheduledHour,event.scheduledMinute), color = Muted, fontSize = 12.sp)
                     }
                     Text(when(event.status){ DoseStatus.TAKEN -> "ALINDI"; DoseStatus.SNOOZED -> "ERTELENDİ"; DoseStatus.MISSED -> "KAÇIRILDI" }, color=if(event.status==DoseStatus.MISSED) Color(0xFF9C6A2E) else Cobalt, fontSize=11.sp, fontWeight=FontWeight.Bold)
