@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.deniz0706.dose.data.MedicationRepository
 import com.deniz0706.dose.model.*
+import com.deniz0706.dose.reminder.DoseActions
 import com.deniz0706.dose.reminder.ReminderScheduler
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -17,4 +18,5 @@ class MedicationViewModel(application: Application) : AndroidViewModel(applicati
     fun save(reminder:MedicationReminder)=viewModelScope.launch{repository.save(reminder);ReminderScheduler.schedule(getApplication(),reminder)}
     fun toggle(reminder:MedicationReminder)=save(reminder.copy(enabled=!reminder.enabled))
     fun delete(reminder:MedicationReminder)=viewModelScope.launch{ReminderScheduler.cancel(getApplication(),reminder);repository.delete(reminder.id)}
+    fun markTaken(reminder:MedicationReminder,timeId:Long)=viewModelScope.launch{DoseActions.taken(getApplication(),reminder,timeId)}
 }
