@@ -6,6 +6,7 @@ import android.content.Intent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 class ReminderActionReceiver : BroadcastReceiver() {
     companion object {
@@ -16,11 +17,12 @@ class ReminderActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val reminder = ReminderScheduler.decode(intent.getStringExtra(ReminderScheduler.EXTRA_REMINDER)) ?: return
         val timeId = intent.getLongExtra(ReminderScheduler.EXTRA_TIME_ID, reminder.effectiveTimes().first().id)
+        val scheduledDate = intent.getStringExtra(ReminderScheduler.EXTRA_SCHEDULED_DATE)?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: LocalDate.now()
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                if (intent.action == ACTION_TAKEN) DoseActions.taken(context, reminder, timeId)
-                else if (intent.action == ACTION_SNOOZE) DoseActions.snoozed(context, reminder, timeId)
+                if (intent.action == ACTION_TAKEN) DoseActions.taken(context, reminder, timeId, scheduledDate)
+                else if (intent.action == ACTION_SNOOZE) DoseActions.snoozed(context, reminder, timeId, scheduledDate)
             } finally { pending.finish() }
         }
     }
