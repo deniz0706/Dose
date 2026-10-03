@@ -76,9 +76,10 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
                 when (section) {
                     "history" -> HistoryScreen(events, reminders, onBack = { section = "today" })
                     "stats" -> StatsScreen(events, onBack = { section = "today" })
-                    "settings" -> SettingsScreen(onBack = { section = "today" })
+                    "archive" -> ArchiveScreen(reminders, onRestore=vm::restore, onDelete=vm::delete, onBack={section="today"})
+                    "settings" -> SettingsScreen(onArchive={section="archive"}, onBack = { section = "today" })
                     else -> HomeScreen(
-                        reminders = reminders, events = events,
+                        reminders = reminders.filterNot { it.archived }, events = events,
                         onAdd = { adding = true }, onToggle = vm::toggle, onDelete = vm::delete,
                         onEdit = { editing = it }, onTaken = vm::markTaken, onUndoTaken = vm::undoTaken,
                         onHistory = { section = "history" }, onStats = { section = "stats" }, onSettings = { section = "settings" }
@@ -130,6 +131,7 @@ private fun HomeScreen(
     onAdd: () -> Unit,
     onToggle: (MedicationReminder) -> Unit,
     onDelete: (MedicationReminder) -> Unit,
+    onArchive: (MedicationReminder) -> Unit = {},
     onEdit: (MedicationReminder) -> Unit,
     onTaken: (MedicationReminder, Long) -> Unit,
     onUndoTaken: (MedicationReminder, Long) -> Unit,
@@ -722,7 +724,19 @@ private fun StatsScreen(events: List<DoseEvent>, onBack: () -> Unit) {
 @Composable private fun StatValue(label:String,value:Int,modifier:Modifier=Modifier){Column(modifier){Text(value.toString(),fontSize=24.sp,fontWeight=FontWeight.SemiBold);Text(label,color=Muted,fontSize=11.sp)}}
 
 @Composable
-private fun SettingsScreen(onBack: () -> Unit) {
+private fun ArchiveScreen(reminders:List<MedicationReminder>,onRestore:(MedicationReminder)->Unit,onDelete:(MedicationReminder)->Unit,onBack:()->Unit){
+    val archived=reminders.filter { it.archived }
+    Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal=28.dp).verticalScroll(rememberScrollState())){
+        Spacer(Modifier.height(28.dp));Row(verticalAlignment=Alignment.CenterVertically){Text("Arşiv",fontSize=34.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.weight(1f));Text("Kapat",color=Cobalt,modifier=Modifier.clickable(onClick=onBack))}
+        Spacer(Modifier.height(20.dp))
+        if(archived.isEmpty()) Text("Arşivlenmiş ilaç yok.",color=Muted) else StoneSurface{Column{
+            archived.forEachIndexed{index,item->Row(Modifier.fillMaxWidth().padding(18.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(item.name,fontWeight=FontWeight.Medium);Text(item.dose,color=Muted,fontSize=11.sp)};Text("Geri yükle",color=Cobalt,fontSize=12.sp,modifier=Modifier.clickable{onRestore(item)});Spacer(Modifier.width(14.dp));Text("Sil",color=Color(0xFF9C3E3E),fontSize=12.sp,modifier=Modifier.clickable{onDelete(item)})};if(index!=archived.lastIndex)HorizontalDivider(color=Hairline)}}
+        }}
+    }
+}
+
+@Composable
+private fun SettingsScreen(onArchive: () -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val alarmManager = remember { context.getSystemService(android.app.AlarmManager::class.java) }
     val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
@@ -763,6 +777,8 @@ private fun SettingsScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(12.dp))
             Text("Bazı Android cihazlarında pil tasarrufu hatırlatmaları geciktirebilir. Dose mevcut izinları kullanır ancak teslimatı garanti edemez.",fontSize=12.sp,color=Muted)
         }}
+        Spacer(Modifier.height(22.dp))
+        Text("Arşivlenmiş ilaçlar",color=Cobalt,fontWeight=FontWeight.Medium,modifier=Modifier.clickable(onClick=onArchive))
         Spacer(Modifier.height(30.dp))
         Text("HAKKINDA",fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,color=Muted)
         Spacer(Modifier.height(10.dp))
