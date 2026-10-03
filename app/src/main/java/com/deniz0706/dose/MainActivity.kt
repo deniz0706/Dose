@@ -12,6 +12,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import android.content.SharedPreferences
 import com.deniz0706.dose.ui.DoseRoot
 
 class MainActivity : ComponentActivity() {
@@ -19,8 +20,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { DoseRoot(startAdding = intent?.action == "com.deniz0706.dose.ADD_MEDICATION") }
-        requestNotificationPermission()
+        val prefs = getSharedPreferences("dose_onboarding", MODE_PRIVATE)
+        val firstRun = !prefs.getBoolean("completed", false)
+        setContent { DoseRoot(startAdding = intent?.action == "com.deniz0706.dose.ADD_MEDICATION", showOnboarding = firstRun, onOnboardingDone = { prefs.edit().putBoolean("completed", true).apply() }) }
     }
 
     private fun requestNotificationPermission() {
