@@ -75,12 +75,13 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
             Box {
                 when (section) {
                     "history" -> HistoryScreen(events, reminders, onBack = { section = "today" })
+                    "stats" -> StatsScreen(events, onBack = { section = "today" })
                     "settings" -> SettingsScreen(onBack = { section = "today" })
                     else -> HomeScreen(
                         reminders = reminders, events = events,
                         onAdd = { adding = true }, onToggle = vm::toggle, onDelete = vm::delete,
                         onEdit = { editing = it }, onTaken = vm::markTaken, onUndoTaken = vm::undoTaken,
-                        onHistory = { section = "history" }, onSettings = { section = "settings" }
+                        onHistory = { section = "history" }, onStats = { section = "stats" }, onSettings = { section = "settings" }
                     )
                 }
                 AnimatedVisibility(
@@ -133,6 +134,7 @@ private fun HomeScreen(
     onTaken: (MedicationReminder, Long) -> Unit,
     onUndoTaken: (MedicationReminder, Long) -> Unit,
     onHistory: () -> Unit,
+    onStats: () -> Unit,
     onSettings: () -> Unit
 ) {
     val today = LocalDate.now()
@@ -174,7 +176,8 @@ private fun HomeScreen(
                     color = Muted
                 )
             }
-            Text("Geçmiş", color = Cobalt, fontSize = 12.sp, modifier = Modifier.padding(end = 14.dp).clickable(onClick = onHistory))
+            Text("Geçmiş", color = Cobalt, fontSize = 12.sp, modifier = Modifier.padding(end = 12.dp).clickable(onClick = onHistory))
+            Text("İstatistik", color = Cobalt, fontSize = 12.sp, modifier = Modifier.padding(end = 12.dp).clickable(onClick = onStats))
             Text("Ayarlar", color = Cobalt, fontSize = 12.sp, modifier = Modifier.padding(end = 14.dp).clickable(onClick = onSettings))
             Box(
                 modifier = Modifier
@@ -649,6 +652,37 @@ private fun HistoryScreen(events: List<DoseEvent>, reminders: List<MedicationRem
         Spacer(Modifier.height(40.dp))
     }
 }
+
+@Composable
+private fun StatsScreen(events: List<DoseEvent>, onBack: () -> Unit) {
+    var days by remember { mutableIntStateOf(7) }
+    val cutoff=LocalDate.now().minusDays(days.toLong()-1)
+    val visible=events.filter { runCatching { LocalDate.parse(it.scheduledDate)>=cutoff }.getOrDefault(false) }
+    val finalByDose=visible.groupBy { it.key }.mapNotNull { (_,list) -> list.maxByOrNull { it.updatedAt } }
+    val taken=finalByDose.count { it.status==DoseStatus.TAKEN }
+    val missed=finalByDose.count { it.status==DoseStatus.MISSED }
+    val snoozed=visible.count { it.status==DoseStatus.SNOOZED }
+    val completed=taken+missed
+    val adherence=if(completed==0) 0 else (taken*100/completed)
+    Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal=28.dp).verticalScroll(rememberScrollState())) {
+        Spacer(Modifier.height(28.dp))
+        Row(verticalAlignment=Alignment.CenterVertically){Text("İstatistik",fontSize=34.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.weight(1f));Text("Kapat",color=Cobalt,modifier=Modifier.clickable(onClick=onBack))}
+        Spacer(Modifier.height(20.dp))
+        Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){listOf(7,30).forEach{d->FilterChip(selected=days==d,onClick={days=d},label={Text("$d gün")})}}
+        Spacer(Modifier.height(18.dp))
+        StoneSurface { Column(Modifier.padding(22.dp)) {
+            Text("%$adherence",fontSize=44.sp,fontWeight=FontWeight.SemiBold,color=Cobalt)
+            Text("planlanan dozların alınma oranı",color=Muted,fontSize=12.sp)
+            Spacer(Modifier.height(16.dp))
+            LinearProgressIndicator(progress={(adherence/100f).coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().height(5.dp),color=Cobalt,trackColor=Hairline)
+            Spacer(Modifier.height(18.dp))
+            Row(Modifier.fillMaxWidth()){StatValue("Alındı",taken,Modifier.weight(1f));StatValue("Kaçırıldı",missed,Modifier.weight(1f));StatValue("Erteleme",snoozed,Modifier.weight(1f))}
+        }}
+        Spacer(Modifier.height(16.dp))
+        Text("Bu ekran yalnızca kaydettiğin hatırlatmaları özetler; tıbbi değerlendirme yapmaz.",color=Muted,fontSize=11.sp)
+    }
+}
+@Composable private fun StatValue(label:String,value:Int,modifier:Modifier=Modifier){Column(modifier){Text(value.toString(),fontSize=24.sp,fontWeight=FontWeight.SemiBold);Text(label,color=Muted,fontSize=11.sp)}}
 
 @Composable
 private fun SettingsScreen(onBack: () -> Unit) {
