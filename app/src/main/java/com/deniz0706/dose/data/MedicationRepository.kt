@@ -30,6 +30,29 @@ class MedicationRepository(private val context: Context) {
         prefs[medicationsKey] = json.encodeToString(decodeReminders(prefs[medicationsKey]).filterNot { it.id == id })
     }
 
+    suspend fun reconcileMissed(now: java.time.ZonedDateTime = java.time.ZonedDateTime.now()) = context.dataStore.edit { prefs ->
+        val reminders = decodeReminders(prefs[medicationsKey])
+        val currentEvents = decodeEvents(prefs[eventsKey]).toMutableList()
+        val start = now.toLocalDate().minusDays(30)
+        var date = start
+        while (!date.isAfter(now.toLocalDate())) {
+            val day = date.dayOfWeek.value
+            reminders.filter { it.enabled && (it.repeatDays.isEmpty() || day in it.repeatDays) }.forEach { reminder ->
+                reminder.effectiveTimes().forEach { time ->
+                    val scheduled = date.atTime(time.hour, time.minute).atZone(now.zone)
+                    if (scheduled.isBefore(now)) {
+                        val key = "${reminder.id}:${time.id}:$date"
+                        if (currentEvents.none { it.key == key }) currentEvents += DoseEvent(
+                            key, reminder.id, time.id, date.toString(), time.hour, time.minute, DoseStatus.MISSED
+                        )
+                    }
+                }
+            }
+            date = date.plusDays(1)
+        }
+        prefs[eventsKey] = json.encodeToString(currentEvents.takeLast(1500))
+    }
+
     suspend fun recordEvent(event: DoseEvent) = context.dataStore.edit { prefs ->
         val current = decodeEvents(prefs[eventsKey])
         prefs[eventsKey] = json.encodeToString((current.filterNot { it.key == event.key } + event).takeLast(1500))
