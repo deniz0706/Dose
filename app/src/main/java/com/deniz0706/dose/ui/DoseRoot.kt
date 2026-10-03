@@ -206,9 +206,14 @@ private fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "Dose · v0.1 — Developed by Deniz",
+                "Dose",
                 color = Muted.copy(alpha = .65f),
                 fontSize = 11.sp
+            )
+            Text(
+                "Developed by Deniz",
+                color = Muted.copy(alpha = .65f),
+                fontSize = 10.sp
             )
             Text(
                 "E<3",
