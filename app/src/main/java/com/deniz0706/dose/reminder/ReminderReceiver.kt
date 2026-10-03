@@ -7,9 +7,11 @@ import android.content.Intent
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val reminder = ReminderScheduler.decode(intent.getStringExtra(ReminderScheduler.EXTRA_REMINDER)) ?: return
-        NotificationHelper.show(context, reminder)
+        val timeId = intent.getLongExtra(ReminderScheduler.EXTRA_TIME_ID, reminder.effectiveTimes().first().id)
+        NotificationHelper.show(context, reminder, timeId)
         if (intent.action == ReminderScheduler.ACTION_NORMAL && reminder.enabled) {
-            ReminderScheduler.schedule(context, reminder)
+            val time = reminder.effectiveTimes().firstOrNull { it.id == timeId } ?: reminder.effectiveTimes().first()
+            ReminderScheduler.scheduleTime(context, reminder, time)
         }
     }
 }
