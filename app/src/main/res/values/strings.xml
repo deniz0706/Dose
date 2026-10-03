@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Dose</string>
+    <string name="shortcut_add_short">İlaç ekle</string>
+    <string name="shortcut_add_long">Yeni ilaç ekle</string>
+</resources>
