@@ -1,17 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Bildirimler -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-    <!-- İlaç saatini mümkün olduğunca kesin zamanlamak için -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-
-    <!-- Tablet yeniden başladığında hatırlatıcıları yeniden kurmak için -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-
-    <!-- Bildirim titreşimi -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <application
         android:name=".DoseApp"
@@ -19,6 +14,14 @@
         android:label="Dose"
         android:supportsRtl="true"
         android:theme="@style/Theme.Dose">
+
+        <activity
+            android:name=".reminder.ReminderAlertActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.Dose" />
 
         <activity
             android:name=".MainActivity"
@@ -29,13 +32,8 @@
             </intent-filter>
         </activity>
 
-        <receiver
-            android:name=".reminder.ReminderReceiver"
-            android:exported="false" />
-
-        <receiver
-            android:name=".reminder.ReminderActionReceiver"
-            android:exported="false" />
+        <receiver android:name=".reminder.ReminderReceiver" android:exported="false" />
+        <receiver android:name=".reminder.ReminderActionReceiver" android:exported="false" />
 
         <receiver
             android:name=".reminder.BootReceiver"
@@ -48,5 +46,4 @@
         </receiver>
 
     </application>
-
 </manifest>
