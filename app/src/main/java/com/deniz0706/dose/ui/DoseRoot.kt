@@ -778,6 +778,7 @@ private fun SettingsScreen(vm:MedicationViewModel,onArchive: () -> Unit, onBack:
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch { runCatching { context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { vm.importBackup(it.readText()) } } }
     }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val alarmManager = remember { context.getSystemService(android.app.AlarmManager::class.java) }
     val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
     val notifications = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
@@ -794,6 +795,7 @@ private fun SettingsScreen(vm:MedicationViewModel,onArchive: () -> Unit, onBack:
         Spacer(Modifier.height(10.dp))
         StoneSurface { Column(Modifier.padding(20.dp)) {
             ReliabilityRow("Bildirimler", notifications)
+            if (!notifications && Build.VERSION.SDK_INT >= 33) { Spacer(Modifier.height(8.dp)); Text("Bildirim iznini aç",color=Cobalt,fontSize=12.sp,modifier=Modifier.clickable{notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)}) }
             Spacer(Modifier.height(10.dp))
             ReliabilityRow("Tam zamanlı alarm", exact)
             Spacer(Modifier.height(10.dp))
@@ -815,6 +817,8 @@ private fun SettingsScreen(vm:MedicationViewModel,onArchive: () -> Unit, onBack:
                 Text("10 saniye sonra test alarmı")
             }
             Spacer(Modifier.height(12.dp))
+            Text("Pil / uygulama ayarlarını aç",color=Cobalt,fontSize=12.sp,modifier=Modifier.clickable{runCatching{context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:${context.packageName}")))}})
+            Spacer(Modifier.height(10.dp))
             Text("Bazı Android cihazlarında pil tasarrufu hatırlatmaları geciktirebilir. Dose mevcut izinları kullanır ancak teslimatı garanti edemez.",fontSize=12.sp,color=Muted)
         }}
         Spacer(Modifier.height(22.dp))
