@@ -1,9 +1,9 @@
 package com.deniz0706.dose.reminder
 
-import android.app.Activity
 import android.app.KeyguardManager
 import android.os.Bundle
 import android.view.WindowManager
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.deniz0706.dose.model.MedicationReminder
 
-class ReminderAlertActivity : Activity() {
+class ReminderAlertActivity : ComponentActivity() {
     private var reminder: MedicationReminder? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
