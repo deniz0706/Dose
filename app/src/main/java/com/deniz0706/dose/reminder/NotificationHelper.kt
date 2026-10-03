@@ -18,13 +18,14 @@ object NotificationHelper {
         })
     }
 
-    fun show(context: Context, reminder: MedicationReminder, timeId: Long) {
+    fun show(context: Context, reminder: MedicationReminder, timeId: Long, scheduledDate: String? = null) {
         createNotificationChannel(context)
         val id = notificationId(reminder, timeId)
         val encoded = ReminderScheduler.encode(reminder)
         fun baseIntent(target: Class<*>) = Intent(context, target).apply {
             putExtra(ReminderScheduler.EXTRA_REMINDER, encoded)
             putExtra(ReminderScheduler.EXTRA_TIME_ID, timeId)
+            scheduledDate?.let { putExtra(ReminderScheduler.EXTRA_SCHEDULED_DATE, it) }
         }
         val full = PendingIntent.getActivity(context, id xor 0x21000000,
             baseIntent(ReminderAlertActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP },
