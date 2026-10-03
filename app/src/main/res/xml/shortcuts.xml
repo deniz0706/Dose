@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="add_medication" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="İlaç ekle" android:shortcutLongLabel="Yeni ilaç ekle">
+        <intent android:action="com.deniz0706.dose.ADD_MEDICATION" android:targetPackage="com.deniz0706.dose" android:targetClass="com.deniz0706.dose.MainActivity" />
+    </shortcut>
+</shortcuts>
