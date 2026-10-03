@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -27,10 +27,10 @@ jobs:
         run: gradle :app:assembleDebug
 
       - name: APK adını düzenle
-        run: cp app/build/outputs/apk/debug/app-debug.apk Dose-v0.1.0-debug.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk Dose-v1.0.0-debug.apk
 
       - name: APK'yı yükle
         uses: actions/upload-artifact@v4
         with:
-          name: Dose-v0.1.0
-          path: Dose-v0.1.0-debug.apk
+          name: Dose-v1.0.0
+          path: Dose-v1.0.0-debug.apk
