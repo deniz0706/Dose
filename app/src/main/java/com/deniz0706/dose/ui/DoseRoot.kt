@@ -58,10 +58,10 @@ private val Muted = Color(0xFF74736D)
 private val Hairline = Color(0xFFE4E2DC)
 
 @Composable
-fun DoseRoot(vm: MedicationViewModel = viewModel()) {
+fun DoseRoot(vm: MedicationViewModel = viewModel(), startAdding:Boolean=false) {
     val reminders by vm.reminders.collectAsState()
     val events by vm.events.collectAsState()
-    var adding by remember { mutableStateOf(false) }
+    var adding by remember { mutableStateOf(startAdding) }
     var editing by remember { mutableStateOf<MedicationReminder?>(null) }
     var section by remember { mutableStateOf("today") }
 
