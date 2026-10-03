@@ -35,5 +35,6 @@ data class DoseEvent(
     val scheduledHour: Int,
     val scheduledMinute: Int,
     val status: DoseStatus,
+    val medicationName: String = "",
     val updatedAt: Long = System.currentTimeMillis()
 )
