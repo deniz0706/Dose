@@ -744,6 +744,10 @@ private fun SettingsScreen(onBack: () -> Unit) {
                     runCatching { context.startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:${context.packageName}"))) }
                 })
             }
+            Spacer(Modifier.height(16.dp))
+            Button(onClick={ ReminderScheduler.scheduleTest(context) },modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp),colors=ButtonDefaults.buttonColors(containerColor=Cobalt)) {
+                Text("10 saniye sonra test alarmı")
+            }
             Spacer(Modifier.height(12.dp))
             Text("Bazı Android cihazlarında pil tasarrufu hatırlatmaları geciktirebilir. Dose mevcut izinları kullanır ancak teslimatı garanti edemez.",fontSize=12.sp,color=Muted)
         }}
