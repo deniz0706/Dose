@@ -6,7 +6,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
-import com.deniz0706.dose.MainActivity
 import com.deniz0706.dose.model.MedicationReminder
 
 object NotificationHelper {
@@ -21,6 +20,7 @@ object NotificationHelper {
         ).apply {
             description = "İlaç saatleri için hatırlatmalar"
             enableVibration(true)
+            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
         manager.createNotificationChannel(channel)
     }
@@ -28,10 +28,14 @@ object NotificationHelper {
     fun show(context: Context, reminder: MedicationReminder) {
         createNotificationChannel(context)
         val id = reminder.id.hashCode()
+        val encoded = ReminderScheduler.encode(reminder)
 
-        val openIntent = PendingIntent.getActivity(
-            context, id,
-            Intent(context, MainActivity::class.java),
+        val alertIntent = Intent(context, ReminderAlertActivity::class.java).apply {
+            putExtra(ReminderScheduler.EXTRA_REMINDER, encoded)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val fullScreenIntent = PendingIntent.getActivity(
+            context, id xor 0x21000000, alertIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -39,7 +43,7 @@ object NotificationHelper {
             context, id xor 0x31000000,
             Intent(context, ReminderActionReceiver::class.java).apply {
                 action = ReminderActionReceiver.ACTION_TAKEN
-                putExtra(ReminderScheduler.EXTRA_REMINDER, ReminderScheduler.encode(reminder))
+                putExtra(ReminderScheduler.EXTRA_REMINDER, encoded)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -48,7 +52,7 @@ object NotificationHelper {
             context, id xor 0x32000000,
             Intent(context, ReminderActionReceiver::class.java).apply {
                 action = ReminderActionReceiver.ACTION_SNOOZE
-                putExtra(ReminderScheduler.EXTRA_REMINDER, ReminderScheduler.encode(reminder))
+                putExtra(ReminderScheduler.EXTRA_REMINDER, encoded)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -59,10 +63,13 @@ object NotificationHelper {
             .setContentTitle("${reminder.name} zamanı")
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setAutoCancel(true)
-            .setContentIntent(openIntent)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setContentIntent(fullScreenIntent)
+            .setFullScreenIntent(fullScreenIntent, true)
             .addAction(0, "Aldım", takenIntent)
             .addAction(0, "10 dk sonra", snoozeIntent)
             .build()
