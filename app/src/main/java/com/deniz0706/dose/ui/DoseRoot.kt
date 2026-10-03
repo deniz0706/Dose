@@ -505,6 +505,78 @@ private fun AddMedicationSheet(
         }
 }
 
+
+@Composable
+private fun HistoryScreen(events: List<DoseEvent>, reminders: List<MedicationReminder>, onBack: () -> Unit) {
+    var days by remember { mutableIntStateOf(7) }
+    val cutoff = LocalDate.now().minusDays(days.toLong() - 1)
+    val visible = events.filter { runCatching { LocalDate.parse(it.scheduledDate) >= cutoff }.getOrDefault(false) }
+        .sortedWith(compareByDescending<DoseEvent> { it.scheduledDate }.thenByDescending { it.scheduledHour * 60 + it.scheduledMinute })
+    val names = reminders.associate { it.id to it.name }
+    Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 28.dp).verticalScroll(rememberScrollState())) {
+        Spacer(Modifier.height(28.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Geçmiş", fontSize = 34.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text("Kapat", color = Cobalt, modifier = Modifier.clickable(onClick = onBack))
+        }
+        Spacer(Modifier.height(20.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            listOf(7,30).forEach { d -> FilterChip(selected = days == d, onClick = { days = d }, label = { Text("$d gün") }) }
+        }
+        Spacer(Modifier.height(18.dp))
+        if (visible.isEmpty()) Text("Henüz kayıt yok. Aldım veya Ertele işlemleri burada görünecek.", color = Muted)
+        else StoneSurface { Column {
+            visible.forEachIndexed { index, event ->
+                Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(names[event.reminderId] ?: "İlaç", fontWeight = FontWeight.Medium)
+                        Text("${event.scheduledDate} · %02d:%02d".format(event.scheduledHour,event.scheduledMinute), color = Muted, fontSize = 12.sp)
+                    }
+                    Text(if(event.status==DoseStatus.TAKEN) "ALINDI" else "ERTELENDİ", color=Cobalt, fontSize=11.sp, fontWeight=FontWeight.Bold)
+                }
+                if(index != visible.lastIndex) HorizontalDivider(color=Hairline)
+            }
+        }}
+        Spacer(Modifier.height(40.dp))
+    }
+}
+
+@Composable
+private fun SettingsScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+    val alarmManager = remember { context.getSystemService(android.app.AlarmManager::class.java) }
+    val exact = android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+    Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal=28.dp).verticalScroll(rememberScrollState())) {
+        Spacer(Modifier.height(28.dp))
+        Row(verticalAlignment=Alignment.CenterVertically) {
+            Text("Ayarlar",fontSize=34.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.weight(1f))
+            Text("Kapat",color=Cobalt,modifier=Modifier.clickable(onClick=onBack))
+        }
+        Spacer(Modifier.height(28.dp))
+        Text("HATIRLATMA GÜVENİLİRLİĞİ",fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,color=Muted)
+        Spacer(Modifier.height(10.dp))
+        StoneSurface { Column(Modifier.padding(20.dp)) {
+            ReliabilityRow("Tam zamanlı alarm", exact)
+            Spacer(Modifier.height(12.dp))
+            Text("Bazı Android cihazlarında pil tasarrufu hatırlatmaları geciktirebilir. Dose mevcut izinları kullanır ancak teslimatı garanti edemez.",fontSize=12.sp,color=Muted)
+        }}
+        Spacer(Modifier.height(30.dp))
+        Text("HAKKINDA",fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,color=Muted)
+        Spacer(Modifier.height(10.dp))
+        StoneSurface { Column(Modifier.padding(20.dp)) {
+            Text("Dose",fontSize=20.sp,fontWeight=FontWeight.SemiBold)
+            Text("Kişisel ilaç hatırlatıcısı",color=Muted,fontSize=13.sp)
+            Spacer(Modifier.height(14.dp)); Text("Developed by Deniz",color=Muted,fontSize=12.sp); Text("E<3",color=Cobalt,fontSize=11.sp)
+        }}
+    }
+}
+@Composable private fun ReliabilityRow(label:String,ok:Boolean) {
+    Row(verticalAlignment=Alignment.CenterVertically) {
+        Text(label,modifier=Modifier.weight(1f),fontWeight=FontWeight.Medium)
+        Text(if(ok) "Hazır" else "İzin gerekli",color=if(ok) Cobalt else Color(0xFF9C6A2E),fontSize=12.sp,fontWeight=FontWeight.Bold)
+    }
+}
+
 private fun relativeTime(target: ZonedDateTime): String {
     val minutes = java.time.Duration.between(ZonedDateTime.now(), target).toMinutes().coerceAtLeast(0)
     return when {
