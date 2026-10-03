@@ -15,8 +15,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccessTime
 import kotlinx.coroutines.delay
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -174,8 +172,8 @@ private fun DoseSplash(onFinished:()->Unit) {
     Surface(Modifier.fillMaxSize(),color=Paper) {
         Column(Modifier.fillMaxSize().alpha(alpha.value),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) {
             Box(Modifier.size(112.dp).scale(scale.value).shadow(10.dp,RoundedCornerShape(30.dp)).background(Cobalt,RoundedCornerShape(30.dp)),contentAlignment=Alignment.Center) {
-                Icon(Icons.Outlined.AccessTime,null,tint=TopLight,modifier=Modifier.size(70.dp))
-                Text("●",color=TopLight,fontSize=32.sp,modifier=Modifier.offset(x=14.dp,y=(-4).dp))
+                Text("◷",color=TopLight,fontSize=64.sp,fontWeight=FontWeight.Light)
+                Text("●",color=TopLight,fontSize=28.sp,modifier=Modifier.offset(x=14.dp,y=(-4).dp))
             }
             Spacer(Modifier.height(24.dp))
             Text("Dose",fontSize=38.sp,fontWeight=FontWeight.SemiBold,color=Ink)
