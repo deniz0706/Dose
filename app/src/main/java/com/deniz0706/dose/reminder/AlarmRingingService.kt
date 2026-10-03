@@ -22,9 +22,10 @@ class AlarmRingingService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val reminder = ReminderScheduler.decode(intent?.getStringExtra(ReminderScheduler.EXTRA_REMINDER)) ?: return START_NOT_STICKY
-        val timeId = intent.getLongExtra(ReminderScheduler.EXTRA_TIME_ID, reminder.effectiveTimes().first().id)
-        val date = intent.getStringExtra(ReminderScheduler.EXTRA_SCHEDULED_DATE)
+        val startIntent = intent ?: return START_NOT_STICKY
+        val reminder = ReminderScheduler.decode(startIntent.getStringExtra(ReminderScheduler.EXTRA_REMINDER)) ?: return START_NOT_STICKY
+        val timeId = startIntent.getLongExtra(ReminderScheduler.EXTRA_TIME_ID, reminder.effectiveTimes().first().id)
+        val date = startIntent.getStringExtra(ReminderScheduler.EXTRA_SCHEDULED_DATE)
         val notification = NotificationHelper.build(this, reminder, timeId, date)
         startForeground(NotificationHelper.notificationId(reminder,timeId), notification)
         if (ringtone == null) {
