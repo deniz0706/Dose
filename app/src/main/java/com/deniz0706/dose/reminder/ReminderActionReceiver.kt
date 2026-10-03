@@ -3,6 +3,9 @@ package com.deniz0706.dose.reminder
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class ReminderActionReceiver : BroadcastReceiver() {
     companion object {
@@ -12,9 +15,13 @@ class ReminderActionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val reminder = ReminderScheduler.decode(intent.getStringExtra(ReminderScheduler.EXTRA_REMINDER)) ?: return
-        NotificationHelper.cancel(context, reminder)
-        if (intent.action == ACTION_SNOOZE) {
-            ReminderScheduler.snooze(context, reminder, 10)
+        val timeId = intent.getLongExtra(ReminderScheduler.EXTRA_TIME_ID, reminder.effectiveTimes().first().id)
+        val pending = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                if (intent.action == ACTION_TAKEN) DoseActions.taken(context, reminder, timeId)
+                else if (intent.action == ACTION_SNOOZE) DoseActions.snoozed(context, reminder, timeId)
+            } finally { pending.finish() }
         }
     }
 }
