@@ -282,7 +282,14 @@ private fun HomeScreen(
                 lowStock.forEachIndexed { index, item ->
                     Row(Modifier.fillMaxWidth().padding(horizontal=20.dp, vertical=13.dp)) {
                         Text(item.name, modifier=Modifier.weight(1f), fontWeight=FontWeight.Medium)
-                        Text(if(item.stock==0) "Stok bitti" else "${item.stock} doz kaldı", color=Color(0xFF9C6A2E), fontSize=12.sp, fontWeight=FontWeight.Medium)
+                        Column(horizontalAlignment=Alignment.End) {
+                            Text(if(item.stock==0) "Stok bitti" else "${item.stock} doz kaldı", color=Color(0xFF9C6A2E), fontSize=12.sp, fontWeight=FontWeight.Medium)
+                            val weekly = item.repeatDays.ifEmpty { (1..7).toSet() }.size * item.effectiveTimes().size
+                            if(item.stock != null && item.stock > 0 && weekly > 0) {
+                                val daysLeft = kotlin.math.ceil(item.stock * 7.0 / weekly).toInt()
+                                Text("yaklaşık $daysLeft gün", color=Muted, fontSize=10.sp)
+                            }
+                        }
                     }
                     if(index != lowStock.lastIndex) HorizontalDivider(color=Hairline)
                 }
@@ -305,6 +312,24 @@ private fun HomeScreen(
                 }
             }
         }
+        Spacer(Modifier.height(28.dp))
+        Text("YARIN", fontSize=11.sp, fontWeight=FontWeight.Bold, letterSpacing=1.7.sp, color=Muted)
+        Spacer(Modifier.height(10.dp))
+        val tomorrow = today.plusDays(1)
+        val tomorrowItems = reminders.filter { it.enabled && (it.repeatDays.isEmpty() || tomorrow.dayOfWeek.value in it.repeatDays) }
+            .flatMap { r -> r.effectiveTimes().map { t -> r to t } }
+            .sortedWith(compareBy({it.second.hour},{it.second.minute}))
+        if(tomorrowItems.isEmpty()) Text("Yarın planlanan doz yok.",color=Muted,modifier=Modifier.padding(vertical=12.dp))
+        else StoneSurface { Column {
+            tomorrowItems.take(6).forEachIndexed { index,pair ->
+                Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically){
+                    Text("%02d:%02d".format(pair.second.hour,pair.second.minute),color=Cobalt,fontWeight=FontWeight.Medium,modifier=Modifier.width(70.dp))
+                    Text(pair.first.name,fontWeight=FontWeight.Medium)
+                }
+                if(index != tomorrowItems.take(6).lastIndex) HorizontalDivider(color=Hairline,modifier=Modifier.padding(start=90.dp))
+            }
+            if(tomorrowItems.size>6) Text("+${tomorrowItems.size-6} doz daha",color=Muted,fontSize=11.sp,modifier=Modifier.padding(20.dp))
+        }}
         Spacer(Modifier.height(36.dp))
         Column(
             modifier = Modifier.align(Alignment.CenterHorizontally),
