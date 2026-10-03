@@ -14,6 +14,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -58,6 +61,7 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
     var editing by remember { mutableStateOf<MedicationReminder?>(null) }
     var section by remember { mutableStateOf("today") }
 
+    BackHandler(enabled = adding || editing != null) { adding = false; editing = null }
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = Cobalt,
@@ -260,6 +264,21 @@ private fun HomeScreen(
             }
         }
 
+        val lowStock = reminders.filter { it.stock != null && it.stock <= it.lowStockThreshold }
+        if (lowStock.isNotEmpty()) {
+            Spacer(Modifier.height(24.dp))
+            Text("STOK", fontSize=11.sp, fontWeight=FontWeight.Bold, letterSpacing=1.7.sp, color=Muted)
+            Spacer(Modifier.height(10.dp))
+            StoneSurface { Column {
+                lowStock.forEachIndexed { index, item ->
+                    Row(Modifier.fillMaxWidth().padding(horizontal=20.dp, vertical=13.dp)) {
+                        Text(item.name, modifier=Modifier.weight(1f), fontWeight=FontWeight.Medium)
+                        Text(if(item.stock==0) "Stok bitti" else "${item.stock} doz kaldı", color=Color(0xFF9C6A2E), fontSize=12.sp, fontWeight=FontWeight.Medium)
+                    }
+                    if(index != lowStock.lastIndex) HorizontalDivider(color=Hairline)
+                }
+            }}
+        }
         Spacer(Modifier.height(28.dp))
         Text("YAKLAŞAN", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp, color = Muted)
         Spacer(Modifier.height(10.dp))
@@ -468,6 +487,7 @@ private fun AddMedicationSheet(
                     onValueChange = { stockText = it.filter(Char::isDigit).take(4) },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Stok adedi (isteğe bağlı)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = RoundedCornerShape(18.dp)
                 )
