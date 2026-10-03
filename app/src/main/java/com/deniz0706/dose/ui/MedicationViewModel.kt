@@ -15,6 +15,7 @@ class MedicationViewModel(application: Application) : AndroidViewModel(applicati
     private val repository=MedicationRepository(application)
     val reminders=repository.reminders.stateIn(viewModelScope,SharingStarted.WhileSubscribed(5_000),emptyList())
     val events=repository.events.stateIn(viewModelScope,SharingStarted.WhileSubscribed(5_000),emptyList())
+    init { viewModelScope.launch { repository.reconcileMissed() } }
     fun save(reminder:MedicationReminder)=viewModelScope.launch{repository.save(reminder);ReminderScheduler.schedule(getApplication(),reminder)}
     fun toggle(reminder:MedicationReminder)=save(reminder.copy(enabled=!reminder.enabled))
     fun delete(reminder:MedicationReminder)=viewModelScope.launch{ReminderScheduler.cancel(getApplication(),reminder);repository.delete(reminder.id)}
