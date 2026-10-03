@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.deniz0706.dose.model.MedicationReminder
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -22,16 +23,14 @@ class MedicationRepository(private val context: Context) {
         } ?: emptyList()
     }
 
-    suspend fun current(): List<MedicationReminder> =
-        reminders.map { it }.let { flow -> kotlinx.coroutines.flow.first(flow) }
+    suspend fun current(): List<MedicationReminder> = reminders.first()
 
     suspend fun save(reminder: MedicationReminder) {
         context.dataStore.edit { prefs ->
             val current = prefs[key]?.let {
                 runCatching { json.decodeFromString<List<MedicationReminder>>(it) }.getOrDefault(emptyList())
             } ?: emptyList()
-            val updated = current.filterNot { it.id == reminder.id } + reminder
-            prefs[key] = json.encodeToString(updated)
+            prefs[key] = json.encodeToString(current.filterNot { it.id == reminder.id } + reminder)
         }
     }
 
