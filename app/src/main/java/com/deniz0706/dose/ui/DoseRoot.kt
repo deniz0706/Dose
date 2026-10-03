@@ -15,6 +15,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.background
@@ -78,7 +81,7 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
                     "history" -> HistoryScreen(events, reminders, onBack = { section = "today" })
                     "stats" -> StatsScreen(events, onBack = { section = "today" })
                     "archive" -> ArchiveScreen(reminders, onRestore=vm::restore, onDelete=vm::delete, onBack={section="today"})
-                    "settings" -> SettingsScreen(onArchive={section="archive"}, onBack = { section = "today" })
+                    "settings" -> SettingsScreen(vm=vm, onArchive={section="archive"}, onBack = { section = "today" })
                     else -> HomeScreen(
                         reminders = reminders.filterNot { it.archived }, events = events,
                         onAdd = { adding = true }, onToggle = vm::toggle, onDelete = vm::delete,
@@ -470,6 +473,9 @@ private fun AddMedicationSheet(
     var times by remember(initial) { mutableStateOf(initial?.effectiveTimes() ?: listOf(MedicationTime(hour = initial?.hour ?: 9, minute = initial?.minute ?: 0))) }
     var days by remember(initial) { mutableStateOf(initial?.repeatDays ?: (1..7).toSet()) }
     val context = LocalContext.current
+    val scope=rememberCoroutineScope()
+    val exportLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")){uri->if(uri!=null)scope.launch{runCatching{context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use{it.write(vm.exportBackup())}}}}
+    val importLauncher=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->if(uri!=null)scope.launch{runCatching{context.contentResolver.openInputStream(uri)?.bufferedReader()?.use{vm.importBackup(it.readText())}}}}
 
     Surface(
         modifier = Modifier
@@ -742,7 +748,7 @@ private fun ArchiveScreen(reminders:List<MedicationReminder>,onRestore:(Medicati
 }
 
 @Composable
-private fun SettingsScreen(onArchive: () -> Unit, onBack: () -> Unit) {
+private fun SettingsScreen(vm:MedicationViewModel,onArchive: () -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val alarmManager = remember { context.getSystemService(android.app.AlarmManager::class.java) }
     val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
@@ -782,6 +788,14 @@ private fun SettingsScreen(onArchive: () -> Unit, onBack: () -> Unit) {
             }
             Spacer(Modifier.height(12.dp))
             Text("Bazı Android cihazlarında pil tasarrufu hatırlatmaları geciktirebilir. Dose mevcut izinları kullanır ancak teslimatı garanti edemez.",fontSize=12.sp,color=Muted)
+        }}
+        Spacer(Modifier.height(22.dp))
+        Text("VERİLER",fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,color=Muted)
+        Spacer(Modifier.height(10.dp))
+        StoneSurface { Column(Modifier.padding(20.dp)) {
+            Text("Yedeği dışa aktar",color=Cobalt,fontWeight=FontWeight.Medium,modifier=Modifier.fillMaxWidth().clickable{exportLauncher.launch("Dose-yedek.json")}.padding(vertical=8.dp))
+            HorizontalDivider(color=Hairline)
+            Text("Yedekten geri yükle",color=Cobalt,fontWeight=FontWeight.Medium,modifier=Modifier.fillMaxWidth().clickable{importLauncher.launch(arrayOf("application/json","text/plain"))}.padding(vertical=8.dp))
         }}
         Spacer(Modifier.height(22.dp))
         Text("Arşivlenmiş ilaçlar",color=Cobalt,fontWeight=FontWeight.Medium,modifier=Modifier.clickable(onClick=onArchive))
