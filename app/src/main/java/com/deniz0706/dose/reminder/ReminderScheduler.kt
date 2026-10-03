@@ -41,6 +41,13 @@ object ReminderScheduler {
         scheduleAt(context, reminder, time, System.currentTimeMillis() + minutes.coerceIn(1,120) * 60_000L, true, scheduledDate)
     }
 
+    fun scheduleTest(context: Context) {
+        val now = System.currentTimeMillis()
+        val test = MedicationReminder(id = now, name = "Dose test alarmı", dose = "Alarm sistemi çalışıyor", enabled = true)
+        val time = MedicationTime(id = now, hour = ZonedDateTime.now().hour, minute = ZonedDateTime.now().minute)
+        scheduleAt(context, test, time, now + 10_000L, false, LocalDate.now())
+    }
+
     fun cancel(context: Context, reminder: MedicationReminder) {
         val manager=context.getSystemService(AlarmManager::class.java)
         reminder.effectiveTimes().forEach { time ->
