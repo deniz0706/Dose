@@ -201,12 +201,21 @@ private fun HomeScreen(
         }
 
         Spacer(Modifier.height(36.dp))
-        Text(
-            "Dose · v0.1 — Developed by Deniz",
+        Column(
             modifier = Modifier.align(Alignment.CenterHorizontally),
-            color = Muted.copy(alpha = .65f),
-            fontSize = 11.sp
-        )
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "Dose · v0.1 — Developed by Deniz",
+                color = Muted.copy(alpha = .65f),
+                fontSize = 11.sp
+            )
+            Text(
+                "E<3",
+                color = Cobalt.copy(alpha = .72f),
+                fontSize = 10.sp
+            )
+        }
         Spacer(Modifier.navigationBarsPadding().height(24.dp))
     }
 }
