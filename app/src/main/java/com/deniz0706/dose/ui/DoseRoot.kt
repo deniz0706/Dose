@@ -328,6 +328,9 @@ private fun AddMedicationSheet(
 ) {
     var name by remember { mutableStateOf("") }
     var dose by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+    var stockText by remember { mutableStateOf("") }
+    var snoozeMinutes by remember { mutableIntStateOf(10) }
     var hour by remember { mutableIntStateOf(9) }
     var minute by remember { mutableIntStateOf(0) }
     var days by remember { mutableStateOf((1..7).toSet()) }
@@ -374,6 +377,37 @@ private fun AddMedicationSheet(
                     singleLine = true,
                     shape = RoundedCornerShape(18.dp)
                 )
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Kendi notun (isteğe bağlı)") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(18.dp)
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = stockText,
+                    onValueChange = { stockText = it.filter(Char::isDigit).take(4) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Stok adedi (isteğe bağlı)") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(18.dp)
+                )
+                Spacer(Modifier.height(16.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Erteleme", fontSize = 12.sp, color = Muted, modifier = Modifier.weight(1f))
+                    listOf(5, 10, 15, 30).forEach { value ->
+                        Text(
+                            "$value dk",
+                            color = if (snoozeMinutes == value) Cobalt else Muted,
+                            fontWeight = if (snoozeMinutes == value) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(start = 12.dp).clickable { snoozeMinutes = value }
+                        )
+                    }
+                }
                 Spacer(Modifier.height(20.dp))
 
                 Text("Saat", fontSize = 12.sp, color = Muted)
@@ -429,6 +463,9 @@ private fun AddMedicationSheet(
                                 MedicationReminder(
                                     name = name.trim(),
                                     dose = dose.trim(),
+                                    note = note.trim(),
+                                    stock = stockText.toIntOrNull(),
+                                    snoozeMinutes = snoozeMinutes,
                                     hour = hour,
                                     minute = minute,
                                     repeatDays = days.ifEmpty { (1..7).toSet() }
