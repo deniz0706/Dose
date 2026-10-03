@@ -9,7 +9,7 @@ object DoseActions {
     fun eventKey(reminderId:Long,timeId:Long,date:LocalDate=LocalDate.now())="$reminderId:$timeId:$date"
     fun event(reminder:MedicationReminder,timeId:Long,status:DoseStatus,scheduledDate:LocalDate=LocalDate.now()):DoseEvent {
         val time=reminder.effectiveTimes().firstOrNull{it.id==timeId}?:reminder.effectiveTimes().first()
-        return DoseEvent(eventKey(reminder.id,time.id,scheduledDate),reminder.id,time.id,scheduledDate.toString(),time.hour,time.minute,status)
+        return DoseEvent(eventKey(reminder.id,time.id,scheduledDate),reminder.id,time.id,scheduledDate.toString(),time.hour,time.minute,status,reminder.name)
     }
     suspend fun taken(context:Context,reminder:MedicationReminder,timeId:Long,scheduledDate:LocalDate=LocalDate.now()){
         MedicationRepository(context).markTaken(reminder,event(reminder,timeId,DoseStatus.TAKEN,scheduledDate))
