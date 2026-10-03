@@ -757,11 +757,13 @@ private fun StatsScreen(events: List<DoseEvent>, onBack: () -> Unit) {
 @Composable
 private fun ArchiveScreen(reminders:List<MedicationReminder>,onRestore:(MedicationReminder)->Unit,onDelete:(MedicationReminder)->Unit,onBack:()->Unit){
     val archived=reminders.filter { it.archived }
+    var pendingDelete by remember { mutableStateOf<MedicationReminder?>(null) }
+    pendingDelete?.let { item -> AlertDialog(onDismissRequest={pendingDelete=null},title={Text("Kalıcı olarak sil?")},text={Text("${item.name} arşivden ve Dose verilerinden kaldırılacak.")},confirmButton={TextButton(onClick={onDelete(item);pendingDelete=null}){Text("Kalıcı sil",color=Color(0xFF9C3E3E))}},dismissButton={TextButton(onClick={pendingDelete=null}){Text("Vazgeç")}}) }
     Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal=28.dp).verticalScroll(rememberScrollState())){
         Spacer(Modifier.height(28.dp));Row(verticalAlignment=Alignment.CenterVertically){Text("Arşiv",fontSize=34.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.weight(1f));Text("Kapat",color=Cobalt,modifier=Modifier.clickable(onClick=onBack))}
         Spacer(Modifier.height(20.dp))
         if(archived.isEmpty()) Text("Arşivlenmiş ilaç yok.",color=Muted) else StoneSurface{Column{
-            archived.forEachIndexed{index,item->Row(Modifier.fillMaxWidth().padding(18.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(item.name,fontWeight=FontWeight.Medium);Text(item.dose,color=Muted,fontSize=11.sp)};Text("Geri yükle",color=Cobalt,fontSize=12.sp,modifier=Modifier.clickable{onRestore(item)});Spacer(Modifier.width(14.dp));Text("Sil",color=Color(0xFF9C3E3E),fontSize=12.sp,modifier=Modifier.clickable{onDelete(item)})};if(index!=archived.lastIndex)HorizontalDivider(color=Hairline)}}
+            archived.forEachIndexed{index,item->Row(Modifier.fillMaxWidth().padding(18.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(item.name,fontWeight=FontWeight.Medium);Text(item.dose,color=Muted,fontSize=11.sp)};Text("Geri yükle",color=Cobalt,fontSize=12.sp,modifier=Modifier.clickable{onRestore(item)});Spacer(Modifier.width(14.dp));Text("Sil",color=Color(0xFF9C3E3E),fontSize=12.sp,modifier=Modifier.clickable{pendingDelete=item})};if(index!=archived.lastIndex)HorizontalDivider(color=Hairline)}}
         }
     }
 }
