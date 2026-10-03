@@ -32,8 +32,8 @@ class ReminderAlertActivity : ComponentActivity() {
         val scheduledDate = intent.getStringExtra(ReminderScheduler.EXTRA_SCHEDULED_DATE)?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: LocalDate.now()
         setContent {
             ReminderAlert(item, timeId,
-                onTaken = { lifecycleScope.launch { DoseActions.taken(this@ReminderAlertActivity, item, timeId, scheduledDate); finish() } },
-                onSnooze = { lifecycleScope.launch { DoseActions.snoozed(this@ReminderAlertActivity, item, timeId, scheduledDate); finish() } }
+                onTaken = { lifecycleScope.launch { DoseActions.taken(this@ReminderAlertActivity, item, timeId, scheduledDate); AlarmRingingService.stop(this@ReminderAlertActivity); finish() } },
+                onSnooze = { lifecycleScope.launch { DoseActions.snoozed(this@ReminderAlertActivity, item, timeId, scheduledDate); AlarmRingingService.stop(this@ReminderAlertActivity); finish() } }
             )
         }
     }
