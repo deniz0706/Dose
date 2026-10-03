@@ -58,12 +58,13 @@ private val Muted = Color(0xFF74736D)
 private val Hairline = Color(0xFFE4E2DC)
 
 @Composable
-fun DoseRoot(vm: MedicationViewModel = viewModel(), startAdding:Boolean=false) {
+fun DoseRoot(vm: MedicationViewModel = viewModel(), startAdding:Boolean=false, showOnboarding:Boolean=false, onOnboardingDone:()->Unit={}) {
     val reminders by vm.reminders.collectAsState()
     val events by vm.events.collectAsState()
     var adding by remember { mutableStateOf(startAdding) }
     var editing by remember { mutableStateOf<MedicationReminder?>(null) }
     var section by remember { mutableStateOf("today") }
+    var onboarding by remember { mutableStateOf(showOnboarding) }
 
     BackHandler(enabled = adding || editing != null) { adding = false; editing = null }
     MaterialTheme(
@@ -89,6 +90,24 @@ fun DoseRoot(vm: MedicationViewModel = viewModel(), startAdding:Boolean=false) {
                         onHistory = { section = "history" }, onStats = { section = "stats" }, onSettings = { section = "settings" }
                     )
                 }
+                if(onboarding) {
+                    Surface(Modifier.fillMaxSize(),color=Paper) {
+                        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(32.dp),verticalArrangement=Arrangement.Center) {
+                            Text("Dose",fontSize=46.sp,fontWeight=FontWeight.SemiBold,color=Cobalt)
+                            Spacer(Modifier.height(12.dp))
+                            Text("İlaç saatlerini unutmamak için sade bir hatırlatıcı.",fontSize=20.sp,color=Ink)
+                            Spacer(Modifier.height(28.dp))
+                            StoneSurface { Column(Modifier.padding(22.dp)) {
+                                Text("Alarmın güvenilir çalışması için bildirim ve alarm izinlerini açık tut.",color=Muted,fontSize=14.sp)
+                                Spacer(Modifier.height(8.dp))
+                                Text("Programı sen belirlersin; Dose yalnızca kaydettiğin saatleri hatırlatır.",color=Muted,fontSize=14.sp)
+                            }}
+                            Spacer(Modifier.height(28.dp))
+                            Button(onClick={onboarding=false;onOnboardingDone()},modifier=Modifier.fillMaxWidth().height(58.dp),shape=RoundedCornerShape(20.dp)){Text("Başla",fontSize=17.sp)}
+                        }
+                    }
+                }
+
                 AnimatedVisibility(
                     visible = adding || editing != null,
                     enter = fadeIn(animationSpec = tween(220)),
