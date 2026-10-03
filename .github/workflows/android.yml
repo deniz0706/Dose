@@ -23,6 +23,12 @@ jobs:
         with:
           gradle-version: '9.8.0'
 
+      - name: Lint
+        run: gradle :app:lintDebug
+
+      - name: Unit testler
+        run: gradle :app:testDebugUnitTest
+
       - name: Debug APK oluştur
         run: gradle :app:assembleDebug
 
