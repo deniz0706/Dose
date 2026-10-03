@@ -139,10 +139,12 @@ private fun HomeScreen(
     onStats: () -> Unit,
     onSettings: () -> Unit
 ) {
+    var search by remember { mutableStateOf("") }
     val today = LocalDate.now()
     val todayIso = today.dayOfWeek.value
-    val todayReminders = reminders.filter { it.repeatDays.isEmpty() || todayIso in it.repeatDays }
-    val occurrences = reminders.filter { it.enabled }.flatMap { r -> r.effectiveTimes().map { t -> Triple(r, t, ReminderScheduler.nextOccurrence(r, t)) } }
+    val filteredReminders = reminders.filter { search.isBlank() || it.name.contains(search, ignoreCase=true) }
+    val todayReminders = filteredReminders.filter { it.repeatDays.isEmpty() || todayIso in it.repeatDays }
+    val occurrences = filteredReminders.filter { it.enabled }.flatMap { r -> r.effectiveTimes().map { t -> Triple(r, t, ReminderScheduler.nextOccurrence(r, t)) } }
     val nextOccurrence = occurrences.minByOrNull { it.third.toInstant().toEpochMilli() }
     val next = nextOccurrence?.first
     val nextTime = nextOccurrence?.second
@@ -193,7 +195,9 @@ private fun HomeScreen(
             }
         }
 
-        Spacer(Modifier.height(34.dp))
+        Spacer(Modifier.height(18.dp))
+        OutlinedTextField(value=search,onValueChange={search=it},modifier=Modifier.fillMaxWidth(),singleLine=true,label={Text("İlaç ara")},shape=RoundedCornerShape(18.dp))
+        Spacer(Modifier.height(24.dp))
 
         Text("SIRADAKİ", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.7.sp, color = Cobalt)
         Spacer(Modifier.height(10.dp))
