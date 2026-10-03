@@ -10,6 +10,14 @@ import android.provider.Settings
 import androidx.core.content.ContextCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccessTime
+import kotlinx.coroutines.delay
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -67,6 +75,7 @@ fun DoseRoot(vm: MedicationViewModel = viewModel(), startAdding:Boolean=false, s
     var editing by remember { mutableStateOf<MedicationReminder?>(null) }
     var section by remember { mutableStateOf("today") }
     var onboarding by remember { mutableStateOf(showOnboarding) }
+    var splashVisible by remember { mutableStateOf(true) }
 
     BackHandler(enabled = adding || editing != null) { adding = false; editing = null }
     MaterialTheme(
@@ -91,6 +100,9 @@ fun DoseRoot(vm: MedicationViewModel = viewModel(), startAdding:Boolean=false, s
                         onEdit = { editing = it }, onArchive = vm::archive, onTaken = vm::markTaken, onUndoTaken = vm::undoTaken,
                         onHistory = { section = "history" }, onStats = { section = "stats" }, onSettings = { section = "settings" }
                     )
+                }
+                AnimatedVisibility(visible=splashVisible,exit=fadeOut(tween(280))) {
+                    DoseSplash(onFinished={splashVisible=false})
                 }
                 if(onboarding) {
                     Surface(Modifier.fillMaxSize(),color=Paper) {
@@ -145,6 +157,30 @@ fun DoseRoot(vm: MedicationViewModel = viewModel(), startAdding:Boolean=false, s
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun DoseSplash(onFinished:()->Unit) {
+    val alpha=remember{Animatable(0f)}
+    val scale=remember{Animatable(.86f)}
+    LaunchedEffect(Unit) {
+        launch { alpha.animateTo(1f,tween(420)) }
+        scale.animateTo(1f,tween(650,easing=FastOutSlowInEasing))
+        delay(420)
+        onFinished()
+    }
+    Surface(Modifier.fillMaxSize(),color=Paper) {
+        Column(Modifier.fillMaxSize().alpha(alpha.value),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) {
+            Box(Modifier.size(112.dp).scale(scale.value).shadow(10.dp,RoundedCornerShape(30.dp)).background(Cobalt,RoundedCornerShape(30.dp)),contentAlignment=Alignment.Center) {
+                Icon(Icons.Outlined.AccessTime,null,tint=TopLight,modifier=Modifier.size(70.dp))
+                Text("●",color=TopLight,fontSize=32.sp,modifier=Modifier.offset(x=14.dp,y=(-4).dp))
+            }
+            Spacer(Modifier.height(24.dp))
+            Text("Dose",fontSize=38.sp,fontWeight=FontWeight.SemiBold,color=Ink)
+            Spacer(Modifier.height(5.dp))
+            Text("Hatırla. Zamanında.",fontSize=13.sp,color=Muted)
         }
     }
 }
