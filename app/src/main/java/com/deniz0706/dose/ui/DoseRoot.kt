@@ -68,7 +68,7 @@ fun DoseRoot(vm: MedicationViewModel = viewModel()) {
                     else -> HomeScreen(
                         reminders = reminders, events = events,
                         onAdd = { adding = true }, onToggle = vm::toggle, onDelete = vm::delete,
-                        onEdit = { editing = it }, onTaken = vm::markTaken,
+                        onEdit = { editing = it }, onTaken = vm::markTaken, onUndoTaken = vm::undoTaken,
                         onHistory = { section = "history" }, onSettings = { section = "settings" }
                     )
                 }
@@ -120,6 +120,7 @@ private fun HomeScreen(
     onDelete: (MedicationReminder) -> Unit,
     onEdit: (MedicationReminder) -> Unit,
     onTaken: (MedicationReminder, Long) -> Unit,
+    onUndoTaken: (MedicationReminder, Long) -> Unit,
     onHistory: () -> Unit,
     onSettings: () -> Unit
 ) {
@@ -172,7 +173,9 @@ private fun HomeScreen(
         Spacer(Modifier.height(10.dp))
 
         StoneSurface {
-            if (next == null) {
+            if (totalToday > 0 && takenCount >= totalToday) {
+                Column(Modifier.padding(24.dp)) { Text("Bugün tamamlandı ✓", fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Cobalt); Spacer(Modifier.height(5.dp)); Text("Bugünkü planlanan dozların tamamı işaretlendi.", color = Muted, fontSize = 13.sp) }
+            } else if (next == null) {
                 Column(Modifier.padding(24.dp)) {
                     Text("Henüz bir hatırlatıcı yok", fontSize = 20.sp, fontWeight = FontWeight.Medium)
                     Spacer(Modifier.height(6.dp))
@@ -226,7 +229,7 @@ private fun HomeScreen(
                         val item = pair.first
                         val time = pair.second
                         val taken = todayEvents.any { it.reminderId == item.id && it.timeId == time.id && it.status == DoseStatus.TAKEN }
-                        MedicationRow(item, time, taken, onToggle, onDelete, onEdit, onTaken)
+                        MedicationRow(item, time, taken, onToggle, onDelete, onEdit, onTaken, onUndoTaken)
                         if (index != sorted.lastIndex) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(start = 92.dp),
@@ -285,9 +288,20 @@ private fun MedicationRow(
     onToggle: (MedicationReminder) -> Unit,
     onDelete: (MedicationReminder) -> Unit,
     onEdit: (MedicationReminder) -> Unit,
-    onTaken: (MedicationReminder, Long) -> Unit
+    onTaken: (MedicationReminder, Long) -> Unit,
+    onUndoTaken: (MedicationReminder, Long) -> Unit
 ) {
     var showDelete by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("İlacı sil?") },
+            text = { Text("${item.name} ve planlanan hatırlatmaları kaldırılacak.") },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; onDelete(item) }) { Text("Sil", color = Color(0xFF9C3E3E)) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Vazgeç") } }
+        )
+    }
     Row(
         Modifier
             .fillMaxWidth()
@@ -313,8 +327,8 @@ private fun MedicationRow(
             AnimatedVisibility(showDelete, enter = fadeIn() + slideInVertically()) {
                 Row(Modifier.padding(top = 7.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                     Text("Düzenle", color = Cobalt, fontSize = 12.sp, modifier = Modifier.clickable { onEdit(item) })
-                    if (!taken) Text("Aldım", color = Cobalt, fontSize = 12.sp, modifier = Modifier.clickable { onTaken(item, time.id) })
-                    Text("Sil", color = Color(0xFF9C3E3E), fontSize = 12.sp, modifier = Modifier.clickable { onDelete(item) })
+                    if (!taken) Text("Aldım", color = Cobalt, fontSize = 12.sp, modifier = Modifier.clickable { onTaken(item, time.id) }) else Text("Geri al", color = Muted, fontSize = 12.sp, modifier = Modifier.clickable { onUndoTaken(item, time.id) })
+                    Text("Sil", color = Color(0xFF9C3E3E), fontSize = 12.sp, modifier = Modifier.clickable { confirmDelete = true })
                 }
             }
         }
