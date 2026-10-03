@@ -18,7 +18,8 @@ data class MedicationReminder(
     val note: String = "",
     val snoozeMinutes: Int = 10,
     val stock: Int? = null,
-    val lowStockThreshold: Int = 5
+    val lowStockThreshold: Int = 5,
+    val archived: Boolean = false
 ) {
     fun effectiveTimes(): List<MedicationTime> =
         if (times.isNotEmpty()) times else listOf(MedicationTime(id = id, hour = hour, minute = minute))
